@@ -101,7 +101,7 @@ load(full_design_file)
 #--------------------------------------------------------------
 # 5. Load vignette-set definitions
 #--------------------------------------------------------------
-set_names <- openxlsx::getSheetNames(vignette_sets)
+set_names <- openxlsx::getSheetNames(vignette_sets_file)
 
 
 #--------------------------------------------------------------
@@ -234,3 +234,4 @@ for (s in seq_along(set_names)) {
 cat("\n-----------------------------------------\n")
 cat("Vignette text generation complete.\n")
 cat("-----------------------------------------\n")
+
