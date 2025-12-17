@@ -175,3 +175,6 @@ MIT license:
 - Free to extend
 
 If you improve the app, consider sharing your changes.
+
+This software is provided for research and educational purposes.
+The author assumes no responsibility for data protection compliance, ethical approval, or misuse in applied settings.
