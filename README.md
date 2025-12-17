@@ -35,8 +35,8 @@ Commercial research consultancies often charge large sums for:
 - Data handling
 
 With modern tools and AI assistance, one researcher can do this.
-
 Research funding should support research, not opaque infrastructure.
+
 ---
 
 ## Typical research workflow
@@ -98,7 +98,7 @@ Balanced designs are enforced by default.
 
 ---
 
-### Step 4: (Optional) Add question batteries
+### Step 4: Add/adapt question batteries
 Question batteries that measure one or more latent construct are defined in Excel files and loaded automatically.
 
 This allows:
