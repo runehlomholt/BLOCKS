@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software in your research, please cite it as below."
 
-title: "Blocked Vignette Experiment App"
+title: "BLOCKS - Blocked Vignette Designs for Case Studies"
 type: software
 
 authors:
@@ -19,7 +19,7 @@ abstract: >
   Experimental designs and vignette texts are generated externally (e.g. in R),
   while the application handles experimental delivery and data collection.
 
-repository-code: "https://github.com/runehlomholt/vignette-experiment-app"
+repository-code: "https://github.com/runehlomholt/BLOCKS"
 
 license: MIT
 
@@ -30,3 +30,12 @@ keywords:
   - educational research
   - research infrastructure
   - open source
+
+preferred-citation:
+  type: software
+  authors:
+    - family-names: Lomholt
+      given-names: Rune
+  title: "BLOCKS"
+  year: 2025
+  repository-code: "https://github.com/runehlomholt/BLOCKS"
