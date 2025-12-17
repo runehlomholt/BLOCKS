@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page">
+
+  <!-- =========================
+       Header (logo + progress)
+  ========================== -->
+  <div class="header">
+    <div class="header-left">
+      <img
+        src="/static/KP_logo_external_use_DK_Black_RGB.png"
+        alt="Københavns Professionshøjskole"
+        class="logo"
+      />
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar">
+        <div
+          class="progress-bar-fill"
+          style="width: {{ vignette.progress_percent }}%;"
+        ></div>
+      </div>
+      <div class="progress-text">
+        {{ vignette.progress_percent }} %
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================
+       Instruction
+  ========================== -->
+  <h2 class="instruction">
+    Læs følgende situation grundigt igennem
+  </h2>
+
+  <!-- =========================
+       Vignette text
+  ========================== -->
+  <div class="vignette-box">
+    <p class="vignette-text">
+      {{ vignette.text }}
+    </p>
+  </div>
+
+  <!-- =========================
+       Questions
+  ========================== -->
+  <form method="post" action="/vignette/{{ respondent_uuid }}">
+
+    {% if batteries %}
+
+      {% for battery in batteries %}
+
+        <div class="battery-block">
+
+          <h3 class="battery-heading">
+            {{ battery.heading }}
+          </h3>
+
+          {% set scale_values = battery.scale["values"] %}
+          {% set scale_labels = battery.scale["labels"] %}
+
+          <div
+            class="battery-matrix"
+            style="
+              display: grid;
+              grid-template-columns: 2fr repeat({{ scale_values | length }}, 1fr);
+              gap: 10px 12px;
+              align-items: center;
+            "
+          >
+
+            <!-- Scale header -->
+            <div></div>
+            {% for label in scale_labels %}
+              <div class="scale-label">
+                {{ label }}
+              </div>
+            {% endfor %}
+
+            <!-- Questions -->
+            {% for q in battery.questions %}
+              <div class="question-text">
+                {{ q.question_text }}
+              </div>
+
+              {% for val in scale_values %}
+                <div class="option">
+                  <input
+                    type="radio"
+                    name="battery_{{ q.question_id }}"
+                    value="{{ val }}"
+                    required
+                  >
+                </div>
+              {% endfor %}
+            {% endfor %}
+
+          </div>
+        </div>
+
+      {% endfor %}
+
+    {% else %}
+      <p><em>No questions loaded.</em></p>
+    {% endif %}
+
+    <!-- =========================
+         Hidden metadata
+    ========================== -->
+    <input type="hidden" name="order" value="{{ order }}">
+    <input type="hidden" name="vignette_id" value="{{ vignette.id }}">
+    <input type="hidden" name="started_at" value="{{ start_timestamp }}">
+    <input type="hidden" name="ended_at" id="ended_at" value="">
+    <input type="hidden" name="click_count" id="click_count" value="0">
+
+    <!-- =========================
+         Navigation
+    ========================== -->
+    <div class="navigation">
+      <button type="submit" class="primary">
+        Næste
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+<script>
+  let clickCount = 0;
+
+  document.addEventListener("click", function () {
+    clickCount += 1;
+    document.getElementById("click_count").value = clickCount;
+  });
+
+  document.querySelector("form").addEventListener("submit", function () {
+    document.getElementById("ended_at").value = new Date().toISOString();
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="attention-box">
+
+  <h2>Hurtig kontrol</h2>
+
+  <p class="attention-instruction">
+    Vær venlig at løse følgende problem for at fortsætte.
+  </p>
+
+  <div class="attention-task">
+    <span class="attention-equation">
+      {{ a }} + {{ b }} =
+    </span>
+  </div>
+
+  <form method="post" action="/attention/{{ respondent_uuid }}">
+
+    <input type="hidden" name="order" value="{{ order }}">
+
+    <label for="answer" class="attention-label">
+      Dit svar
+    </label>
+
+    <input
+      type="number"
+      id="answer"
+      name="answer"
+      required
+      autofocus
+      class="attention-input"
+    >
+
+    <div class="navigation">
+      <button type="submit" class="primary">
+        Fortsæt
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+{% endblock %}

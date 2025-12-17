@@ -1,0 +1,228 @@
+/* =================================================
+   Base
+================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f3f4f6;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1f2933;
+}
+
+/* =================================================
+   Page container
+================================================= */
+
+.page {
+  max-width: 960px;
+  margin: 40px auto;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 32px 40px 40px;
+}
+
+/* =================================================
+   Header
+================================================= */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  height: 40px;
+}
+
+/* =================================================
+   Progress bar
+================================================= */
+
+.progress {
+  flex: 1;
+  max-width: 300px;
+}
+
+.progress-bar {
+  height: 10px;
+  background-color: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #c62828;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: right;
+  margin-top: 6px;
+}
+
+/* =================================================
+   Vignette box
+================================================= */
+
+.vignette-box {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.vignette-box h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.vignette-text p {
+  margin: 0 0 10px 0;
+}
+
+.vignette-text {
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+/* =================================================
+   Question matrix
+================================================= */
+
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 36px;
+}
+
+.matrix thead th {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 8px;
+  text-align: center;
+  color: #374151;
+}
+
+.matrix tbody td {
+  padding: 12px 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.matrix tbody tr:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+.matrix .question-text {
+  width: 42%;
+  font-size: 15px;
+  text-align: left;
+}
+
+.matrix .option {
+  text-align: center;
+}
+
+/* =================================================
+   Radio buttons
+================================================= */
+
+input[type="radio"] {
+  transform: scale(1.15);
+  cursor: pointer;
+}
+
+/* =================================================
+   Navigation
+================================================= */
+
+.navigation {
+  display: flex;
+  justify-content: flex-end;   /* right-align buttons */
+  align-items: center;
+  margin-top: 24px;
+}
+
+
+button {
+  font-size: 15px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+button.secondary {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+button.primary {
+  background-color: #c62828;
+  color: #ffffff;
+}
+
+button.primary:hover {
+  background-color: #b71c1c;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================
+   Attention check
+========================= */
+
+.attention-box {
+  max-width: 600px;
+  margin: 48px auto;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.attention-box h2 {
+  margin-top: 0;
+}
+
+.attention-box label {
+  display: block;
+  margin-top: 16px;
+  font-weight: 500;
+}
+
+.attention-box input[type="text"],
+.attention-box input[type="number"] {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 15px;
+  margin-top: 6px;
+}
+
+.attention-box button {
+  margin-top: 24px;
+}
