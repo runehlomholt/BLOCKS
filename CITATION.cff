@@ -19,7 +19,7 @@ abstract: >
   Experimental designs and vignette texts are generated externally (e.g. in R),
   while the application handles experimental delivery and data collection.
 
-repository-code: "https://github.com/USERNAME/REPO_NAME"
+repository-code: "https://github.com/runehlomholt/vignette-experiment-app"
 
 license: MIT
 
