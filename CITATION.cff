@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+
+title: "Blocked Vignette Experiment App"
+type: software
+
+authors:
+  - family-names: Lomholt
+    given-names: Rune
+    affiliation: Københavns Professionshøjskole
+    orcid: https://orcid.org/0000-0002-5333-3234 
+
+year: 2025
+
+abstract: >
+  An open-source web application for designing and running blocked vignette
+  experiments. The app supports researcher-defined blocked designs, dynamic
+  loading of vignette sets, attention checks, and export of analysis-ready data.
+  Experimental designs and vignette texts are generated externally (e.g. in R),
+  while the application handles experimental delivery and data collection.
+
+repository-code: "https://github.com/USERNAME/REPO_NAME"
+
+license: MIT
+
+keywords:
+  - vignette experiments
+  - blocked designs
+  - experimental methods
+  - educational research
+  - research infrastructure
+  - open source
