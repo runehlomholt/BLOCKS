@@ -1,0 +1,25 @@
+Header placeholder text.
+
+S1 – Klasseoplysninger (ret tekst)
+
+[fx: Klassen består af 22 elever med forskellige forudsætninger.]
+
+S2 – Skolekontekst (ret tekst)
+
+[fx: Undervisningen foregår i en almindelig dansk folkeskole.]
+
+[A1 placeholder text]
+
+[B2 placeholder text]
+
+[C2 placeholder text]
+
+S3 – Fag og lektionsramme (ret tekst)
+
+[fx: Lektionen handler om danskfaglige kompetencer.]
+
+[D2 placeholder text]
+
+[E1 placeholder text]
+
+[F1 placeholder text]
