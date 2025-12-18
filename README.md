@@ -1,4 +1,4 @@
-# BLOCKS - Free Blocked Vignette Experiment App  
+# BLOCKS - Blocked Vignette Designs for Case Studies  
 **Design, deploy, and run blocked vignette experiments — without consultancy fees**
 
 This repository contains a free, open-source web application for running blocked vignette experiments with full control over design, randomisation, data storage, and GDPR compliance.
