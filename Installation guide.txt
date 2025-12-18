@@ -1,0 +1,198 @@
+
+
+# BLOCKS – Installation and Deployment Guide
+
+This guide explains how to install and deploy the BLOCKS app using GitHub and Railway.
+It assumes no advanced technical background and is intended for researchers and educators.
+
+
+---
+
+1. Required Accounts
+
+---
+
+Before you start, you need two accounts:
+
+1. GitHub account
+
+* Create an account at [https://github.com](https://github.com)
+* GitHub is used to host the source code and manage your own copy of the app.
+
+2. Railway account
+
+* Create an account at [https://railway.app](https://railway.app)
+* Railway is used to deploy and host the BLOCKS app online.
+* During setup, Railway will ask you to connect your GitHub account.
+
+---
+
+2. Fork the BLOCKS Repository
+
+---
+
+1. Go to the BLOCKS repository:
+   [https://github.com/runehlomholt/BLOCKS](https://github.com/runehlomholt/BLOCKS)
+
+2. Click the “Fork” button (top right).
+
+   * This creates a copy of the repository under your own GitHub account.
+
+3. You will now have your own version of BLOCKS, e.g.:
+   [https://github.com/YOUR_USERNAME/BLOCKS](https://github.com/YOUR_USERNAME/BLOCKS)
+
+(Optional – local copy)
+If you want to work locally on your computer:
+
+* Clone your fork using Git:
+  git clone [https://github.com/YOUR_USERNAME/BLOCKS.git](https://github.com/YOUR_USERNAME/BLOCKS.git)
+* Enter the project folder:
+  cd BLOCKS
+
+---
+
+3. Prepare the Excel Files (IMPORTANT)
+
+---
+
+BLOCKS relies on Excel files to define vignette content, question batteries, and related inputs.
+
+General rules:
+
+* Excel files must be placed in the correct folders inside the repository.
+* File and folder names must match what the app expects.
+* Column names and sheet structure must be consistent.
+
+Typical structure (example – check README for exact names):
+
+BLOCKS/
+├── vignette_sets/
+│   ├── set_1/
+│   │   └── questions.xlsx
+│   ├── set_2/
+│   │   └── questions.xlsx
+│   └── ...
+├── app files
+└── configuration files
+
+Excel file requirements:
+
+* Each file should contain the full question battery for a vignette set.
+* Columns must follow the expected format (e.g. item text, response options, scales).
+* Do not rename columns unless the code explicitly supports it.
+* Save files in standard .xlsx format.
+
+Tip:
+
+* Start by copying an existing example Excel file from the repository and modifying its contents rather than creating a new file from scratch.
+
+After editing Excel files:
+
+* Commit and push the changes to your forked GitHub repository.
+
+---
+
+4. Deploy the App on Railway
+
+---
+
+1. Log in to Railway:
+   [https://railway.app](https://railway.app)
+
+2. Create a new project:
+
+   * Choose “Deploy from GitHub repository”.
+
+3. Connect GitHub to Railway (if not already connected):
+
+   * Authorise Railway to access your GitHub repositories.
+
+4. Select your forked BLOCKS repository from the list.
+
+5. Configure deployment:
+
+   * In most cases, no advanced configuration is needed.
+   * Railway automatically assigns a PORT and builds the app.
+
+6. Click “Deploy”.
+
+Railway will:
+
+* Build the app
+* Start the server
+* Generate a public URL for your BLOCKS instance
+
+---
+
+5. Updating the App
+
+---
+
+* Any change you push to your GitHub repository (including updated Excel files)
+  will automatically trigger a new deployment on Railway.
+* This makes it easy to update vignette content without redeploying manually.
+
+---
+
+6. Optional: Run BLOCKS Locally
+
+---
+
+If you want to test the app locally before deploying:
+
+1. Install required software (see README):
+
+   * Programming language runtime (e.g. Python)
+   * Required libraries (via requirements.txt or equivalent)
+
+2. Install dependencies:
+   pip install -r requirements.txt
+
+3. Start the app locally following the README instructions.
+
+4. Verify that:
+
+   * Excel files load correctly
+   * Vignettes appear as expected
+
+---
+
+7. Troubleshooting
+
+---
+
+* If Railway cannot see your repository:
+
+  * Check that GitHub is connected in Railway settings.
+
+* If deployment fails:
+
+  * Open the Railway logs to see build or runtime errors.
+  * Common issues include missing files or incorrectly formatted Excel sheets.
+
+* If vignette content does not appear:
+
+  * Double-check folder names and Excel column headers.
+  * Ensure files were pushed to GitHub, not only saved locally.
+
+---
+
+8. Summary
+
+---
+
+To run BLOCKS, you must:
+
+* Create GitHub and Railway accounts
+* Fork the BLOCKS repository
+* Prepare and correctly place Excel files
+* Deploy the forked repository via Railway
+
+Once deployed, BLOCKS is accessible via a public URL and updates automatically when you push changes.
+
+---
+
+If you want, I can also:
+
+* Create a **separate TXT file just for Excel formatting rules**, or
+* Rewrite this as a **README.md section** or **supplementary material for a software paper**.
