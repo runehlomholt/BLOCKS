@@ -20,7 +20,9 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from .database import SessionLocal, engine
 from . import models
@@ -57,18 +59,71 @@ def token_required() -> bool:
     return os.environ.get("TOKEN_REQUIRED", "1") == "1"
 
 
-def assign_vignette_set() -> str:
-    if not DESIGN or not DESIGN.sets:
-        raise HTTPException(status_code=500, detail="Design not loaded")
-    return random.choice(list(DESIGN.sets.keys()))
-
-
 def _load_design_or_fail() -> None:
     global DESIGN
     design_path = get_design_path()
     DESIGN = load_design(design_path)
     if os.environ.get("ALLOW_UNBALANCED_SETS", "0") != "1":
         validate_balanced_sets(DESIGN)
+
+
+def _ensure_allocation_lock_row() -> None:
+    """
+    Ensure the single allocation_lock row exists (id=1).
+    This lets us do SELECT ... FOR UPDATE reliably under concurrency.
+    """
+    db = SessionLocal()
+    try:
+        existing = (
+            db.query(models.AllocationLock)
+            .filter(models.AllocationLock.id == 1)
+            .first()
+        )
+        if existing is None:
+            db.add(models.AllocationLock(id=1))
+            db.commit()
+    finally:
+        db.close()
+
+
+def assign_vignette_set_quota(db: Session) -> str:
+    """
+    Quota-based randomisation with concurrency safety (Pattern A).
+    A set is counted as 'filled' when the respondent row is created (started).
+
+    Algorithm:
+      1) Lock allocation_lock row (FOR UPDATE)
+      2) Count respondents per condition_set (started)
+      3) Find minimum count across all sets (including zeros)
+      4) Randomly choose among sets at the minimum
+    """
+    if not DESIGN or not DESIGN.sets:
+        raise HTTPException(status_code=500, detail="Design not loaded")
+
+    all_sets = list(DESIGN.sets.keys())
+    if not all_sets:
+        raise HTTPException(status_code=500, detail="No sets in design")
+
+    # 1) Acquire lock (Pattern A)
+    db.query(models.AllocationLock).filter(models.AllocationLock.id == 1).with_for_update().one()
+
+    # 2) Counts per set from respondents table (started == has respondent row)
+    rows = (
+        db.query(models.Respondent.condition_set, func.count(models.Respondent.id))
+        .group_by(models.Respondent.condition_set)
+        .all()
+    )
+    counts = {set_name: 0 for set_name in all_sets}
+    for set_name, n in rows:
+        if set_name in counts:
+            counts[set_name] = int(n)
+
+    # 3) Minimum count
+    min_n = min(counts.values())
+
+    # 4) Choose among least-filled
+    eligible = [s for s, n in counts.items() if n == min_n]
+    return random.choice(eligible)
 
 
 def _ensure_respondent_has_attention_plan(respondent, num_vignettes: int) -> None:
@@ -94,18 +149,6 @@ def _math_problem(respondent_uuid: str, order: int):
     return a, b, a + b
 
 
-def _all_question_ids() -> list[str]:
-    qids = []
-    seen = set()
-    for battery in QUESTION_BATTERIES.values():
-        for q in battery:
-            qid = str(q["question_id"])
-            if qid not in seen:
-                seen.add(qid)
-                qids.append(qid)
-    return qids
-
-
 # -------------------------
 # Startup
 # -------------------------
@@ -118,6 +161,8 @@ def on_startup():
     global QUESTION_BATTERIES
     BASE_DIR = Path(__file__).resolve().parent.parent
     QUESTION_BATTERIES = load_question_batteries(BASE_DIR / "question_batteries")
+
+    _ensure_allocation_lock_row()
 
 
 # -------------------------
@@ -142,29 +187,39 @@ def start(request: Request, db: Session = Depends(get_db)):
     )
 
     if respondent is None:
-        respondent = models.Respondent(
-            respondent_uuid=str(uuid.uuid4()),
-            external_id=token,
-            condition_set=assign_vignette_set(),
-        )
-        db.add(respondent)
+        # IMPORTANT:
+        # The query above may already have opened an implicit transaction on this Session.
+        # So we use begin_nested() (SAVEPOINT) to avoid "transaction already begun".
+        # This still keeps the allocation lock + insert atomic.
+        with db.begin_nested():
+            chosen_set = assign_vignette_set_quota(db)
+
+            respondent = models.Respondent(
+                respondent_uuid=str(uuid.uuid4()),
+                external_id=token,
+                condition_set=chosen_set,
+                user_agent=request.headers.get("user-agent"),
+            )
+            db.add(respondent)
+            db.flush()  # respondent.id available inside the transaction
+
+            vignettes = DESIGN.sets[respondent.condition_set][:]
+            random.shuffle(vignettes)
+
+            for order, v in enumerate(vignettes, start=1):
+                db.add(
+                    models.AssignedVignette(
+                        respondent_id=respondent.id,
+                        vignette_id=str(v["id"]),
+                        display_order=order,
+                    )
+                )
+
+            _ensure_respondent_has_attention_plan(respondent, len(vignettes))
+
+        # Commit outer transaction (if still open) so the respondent is persisted.
         db.commit()
         db.refresh(respondent)
-
-        vignettes = DESIGN.sets[respondent.condition_set][:]
-        random.shuffle(vignettes)
-
-        for order, v in enumerate(vignettes, start=1):
-            db.add(
-                models.AssignedVignette(
-                    respondent_id=respondent.id,
-                    vignette_id=str(v["id"]),
-                    display_order=order,
-                )
-            )
-
-        _ensure_respondent_has_attention_plan(respondent, len(vignettes))
-        db.commit()
 
     return RedirectResponse(
         url=f"/vignette/{respondent.respondent_uuid}?order=1",
@@ -188,7 +243,7 @@ def show_vignette(
     if respondent is None:
         raise HTTPException(status_code=404, detail="Respondent not found")
 
-    # --- attention check redirect (unchanged) ---
+    # --- attention check redirect ---
     if (
         respondent.attention_order is not None
         and not respondent.attention_completed
@@ -226,29 +281,18 @@ def show_vignette(
     if vignette is None:
         raise HTTPException(status_code=500, detail="Vignette not found in design")
 
-    # ==================================================
-    # Progress (purely presentational)
-    # order is 1-based, total_vignettes is count
-    # ==================================================
     total_vignettes = len(DESIGN.sets[respondent.condition_set])
     current_index = int(order)
     progress_percent = round((current_index / max(total_vignettes, 1)) * 100)
-
-    # clamp defensively
     progress_percent = max(0, min(progress_percent, 100))
 
-    # attach progress to vignette dict (safe copy)
     vignette = dict(vignette)
     vignette["progress_percent"] = progress_percent
 
-    # ==================================================
-    # Batteries: support BOTH list and dict loader outputs
-    # (design refinement: keep template stable)
-    # ==================================================
     if isinstance(QUESTION_BATTERIES, dict):
         batteries_for_template = list(QUESTION_BATTERIES.values())
     else:
-        batteries_for_template = QUESTION_BATTERIES  # already a list
+        batteries_for_template = QUESTION_BATTERIES
 
     return templates.TemplateResponse(
         "vignette.html",
@@ -261,37 +305,6 @@ def show_vignette(
             "batteries": batteries_for_template,
         },
     )
-
-
-    # ==================================================
-    # NEW (1): progress calculation (purely presentational)
-    # ==================================================
-    total_vignettes = len(DESIGN.sets[respondent.condition_set])
-    current_index = int(order)
-    progress_percent = round((current_index / total_vignettes) * 100)
-
-    # ==================================================
-    # NEW (2): attach progress to vignette dict
-    # ==================================================
-    vignette = dict(vignette)  # safe copy
-    vignette["progress_percent"] = progress_percent
-
-    return templates.TemplateResponse(
-        "vignette.html",
-        {
-            "request": request,
-            "respondent_uuid": respondent_uuid,
-            "vignette": vignette,
-            "order": order,
-            "start_timestamp": datetime.now(timezone.utc).isoformat(),
-
-            # ==================================================
-            # NEW (3): pass batteries as LIST, not dict
-            # ==================================================
-            "batteries": list(QUESTION_BATTERIES.values()),
-        },
-    )
-
 
 
 @app.post("/vignette/{respondent_uuid}")
@@ -310,6 +323,8 @@ async def submit_vignette(
         .filter(models.Respondent.respondent_uuid == respondent_uuid)
         .first()
     )
+    if respondent is None:
+        raise HTTPException(status_code=404, detail="Respondent not found")
 
     started_dt = datetime.fromisoformat(started_at)
     ended_dt = datetime.fromisoformat(ended_at)
@@ -340,10 +355,6 @@ async def submit_vignette(
     )
 
 
-# -------------------------
-# ATTENTION CHECK
-# -------------------------
-
 @app.get("/attention/{respondent_uuid}", response_class=HTMLResponse)
 def attention_check(
     request: Request,
@@ -362,7 +373,8 @@ def attention_check(
             "b": b,
         },
     )
-    
+
+
 @app.post("/attention/{respondent_uuid}")
 def submit_attention_check(
     respondent_uuid: str,
@@ -375,6 +387,8 @@ def submit_attention_check(
         .filter(models.Respondent.respondent_uuid == respondent_uuid)
         .first()
     )
+    if respondent is None:
+        raise HTTPException(status_code=404, detail="Respondent not found")
 
     _, _, expected = _math_problem(respondent_uuid, int(order))
     respondent.attention_completed = True
@@ -387,18 +401,8 @@ def submit_attention_check(
     )
 
 
-# -------------------------
-# EXPORT
-# -------------------------
-
 @app.get("/export")
 def export_csv(db: Session = Depends(get_db)):
-    """
-    Export one row per respondent × vignette.
-    Item responses are columns.
-    Includes attention-check metadata.
-    """
-
     rows = (
         db.query(
             models.Respondent.respondent_uuid.label("internal_id"),
@@ -425,9 +429,7 @@ def export_csv(db: Session = Depends(get_db)):
         .all()
     )
 
-    # All item IDs that appear in the dataset
     item_ids = sorted({r.question_id for r in rows})
-
     episodes = {}
 
     for r in rows:
@@ -437,7 +439,7 @@ def export_csv(db: Session = Depends(get_db)):
             episodes[key] = {
                 "internal_id": r.internal_id,
                 "respondent_id": r.respondent_id,
-                "block": int(r.block.replace("Set_", "")),
+                "block": int(r.block.replace("Set_", "")) if isinstance(r.block, str) and r.block.startswith("Set_") else r.block,
                 "attention_order": r.attention_order,
                 "attention_completed": r.attention_completed,
                 "attention_correct": r.attention_correct,
@@ -476,7 +478,5 @@ def export_csv(db: Session = Depends(get_db)):
     return StreamingResponse(
         output,
         media_type="text/csv",
-        headers={
-            "Content-Disposition": "attachment; filename=vignette_data.csv"
-        },
+        headers={"Content-Disposition": "attachment; filename=vignette_data.csv"},
     )
