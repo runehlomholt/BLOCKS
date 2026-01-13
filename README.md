@@ -15,8 +15,8 @@ It can be deployed for little or no cost, monitored in R, and extended for your 
 
 ## What the app does
 
-- Assigns respondents to blocked vignette sets
-- Randomises vignette order within blocks
+- Assigns respondents to blocked vignette sets using quota-randomisation
+- Randomises vignette order within blocks (block-randomisation)
 - Presents text-based vignettes with flexible question batteries
 - Supports attention checks
 - Records response times per vignete and click counts
