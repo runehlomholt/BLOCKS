@@ -78,6 +78,13 @@ pacman::p_load(
   tibble
 )
 
+# Always print full tibbles (all rows + all columns) in this script/session
+options(
+  tibble.print_max = Inf,
+  tibble.print_min = Inf,
+  dplyr.print_max  = Inf
+)
+
 # -------------------------------
 # Database connection (via DATABASE_URL)
 # -------------------------------
