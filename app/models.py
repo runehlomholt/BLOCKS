@@ -3,6 +3,17 @@ from sqlalchemy.orm import relationship
 from .database import Base
 
 
+class AllocationLock(Base):
+    """
+    Single-row table used for concurrency-safe quota assignment.
+    We lock the row with SELECT ... FOR UPDATE to ensure only one assignment
+    happens at a time (Pattern A).
+    """
+    __tablename__ = "allocation_lock"
+
+    id = Column(Integer, primary_key=True)  # we'll use id=1
+
+
 class Respondent(Base):
     __tablename__ = "respondents"
 
