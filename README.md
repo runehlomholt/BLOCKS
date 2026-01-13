@@ -180,4 +180,4 @@ This software is provided for research and educational purposes.
 The author assumes no responsibility for data protection compliance, ethical approval, or misuse in applied settings.
 
 Please cite: 
-Lomholt, R. (2025). BLOCKS - Blocked Vignette Designs for Case Studies (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.17974421
+Lomholt, R. (2026). BLOCKS: Blocked Vignette Designs for Case Studies (v1.2.0). Zenodo. https://doi.org/10.5281/zenodo.18233715
