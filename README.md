@@ -18,7 +18,7 @@ It can be deployed for little or no cost, monitored in R, and extended for your 
 - Assigns respondents to blocked vignette sets using quota-randomisation
 - Randomises vignette order within blocks (block-randomisation)
 - Presents text-based vignettes with flexible question batteries
-- Supports attention checks
+- Shows an attention check at random (easy math problem)
 - Records response times per vignete and click counts
 - Exports analysis-ready data (CSV)
 - Integrates cleanly with external survey platforms
