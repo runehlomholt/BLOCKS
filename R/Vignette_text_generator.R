@@ -1,8 +1,8 @@
 #--------------------------------------------------------------
-# Title: Vignette Text Generator (Co-teaching Study)
-# Author: Rune Hejli Lomholt
-# Date: 2025-xx-xx
-# Institution: Københavns Professionshøjskole
+# Title: Vignette Text Generator
+# Author: ??
+# Date: ??
+# Institution: ??
 #--------------------------------------------------------------
 #
 # Description:
@@ -289,3 +289,4 @@ cat("\n-----------------------------------------\n")
 cat("Vignette text generation complete.\n")
 cat("Output folder: ", output_path, "\n")
 cat("-----------------------------------------\n")
+
