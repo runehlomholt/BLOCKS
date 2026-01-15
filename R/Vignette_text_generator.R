@@ -1,4 +1,10 @@
-
+#--------------------------------------------------------------
+# Title: Vignette Text Generator (Co-teaching Study)
+# Author: Rune Hejli Lomholt
+# Date: 2025-xx-xx
+# Institution: Københavns Professionshøjskole
+#--------------------------------------------------------------
+#
 # Description:
 # This script:
 #  1. Loads the full factorial design and blocked vignette sets
@@ -6,18 +12,28 @@
 #  3. Loads ALSO static text fragments (non-manipulated)
 #  4. Merges text in ANY order specified by the researcher
 #  5. Generates vignette .txt files grouped into vignette-set folders
+#
+# Safety/robustness features:
+#  - PLACEHOLDER/scaffold creation is OFF by default (won't overwrite your real files)
+#  - When scaffold creation is ON, files are created ONLY if missing
+#  - Optional "fail fast" check prevents generating vignettes with placeholder text
 #--------------------------------------------------------------
 
+#--------------------------------------------------------------
+# 0. Settings
+#--------------------------------------------------------------
+CREATE_PLACEHOLDERS <- FALSE   # set TRUE only when setting up folders/files first time
+FAIL_ON_PLACEHOLDERS <- TRUE   # set FALSE if you don't want the script to stop on placeholder text
 
 #--------------------------------------------------------------
 # 1. Load packages
 #--------------------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(
-  tidyverse,   
-  openxlsx,    
-  stringr,     
-  readr        
+  tidyverse,
+  openxlsx,
+  stringr,
+  readr
 )
 
 #--------------------------------------------------------------
@@ -26,38 +42,19 @@ pacman::p_load(
 base_path <- "YOURFILEPATH"
 setwd(base_path)
 
-full_design_file   <- file.path(base_path, "full_factorial_design.RData")
-vignette_sets_file <- file.path(base_path, "vignette_sets.xlsx")
+full_design_file <- file.path(base_path, "full_factorial_design.RData")
+vignette_sets    <- file.path(base_path, "vignette_sets.xlsx")
 
 fragment_base_path <- file.path(base_path, "text_fragments")
 output_path        <- file.path(base_path, "generated_vignettes")
 
-dir.create(output_path, showWarnings = FALSE)
+dir.create(output_path, showWarnings = FALSE, recursive = TRUE)
 
+#--------------------------------------------------------------
+# 3. Optional: scaffold folders + placeholder .txt files (SAFE)
+#--------------------------------------------------------------
 
-#-----------------------------------------------------------------------------
-# 3. AUTO-GENERATE STATIC FOLDER AND FACTOR FOLDERS + PLACEHOLDER .TXT FILES
-#-----------------------------------------------------------------------------
-
-#--- 3.1 Create static folder -------------------------------------------------
-static_folder <- file.path(fragment_base_path, "static")
-dir.create(static_folder, showWarnings = FALSE)
-
-# Placeholder files for static text
-static_templates <- list(
-  S1 = "S1 – EXAMPLETEXT\n\n[EXAMPLETEXT]",
-  S2 = "S2 – EXAMPLETEXT\n\n[EXAMPLETEXT]",
-  S3 = "S3 – EXAMPLETEXT\n\n[EXAMPLETEXT]"
-)
-
-for (nm in names(static_templates)) {
-  write_file(
-    static_templates[[nm]],
-    file.path(static_folder, paste0(nm, ".txt"))
-  )
-}
-
-#--- 3.2 Function: Generate factor folders + placeholder files ----------------
+#--- 3.1 Function: Generate factor folders + placeholder files ----------------
 generate_factor_folders <- function(base_path, factor_specs) {
   
   for (factor_name in names(factor_specs)) {
@@ -66,57 +63,93 @@ generate_factor_folders <- function(base_path, factor_specs) {
     
     # Create folder for factor if it doesn't exist
     factor_folder <- file.path(base_path, factor_name)
-    dir.create(factor_folder, showWarnings = FALSE)
+    dir.create(factor_folder, showWarnings = FALSE, recursive = TRUE)
     
-    # Create placeholder .txt files for each factor level
+    # Create placeholder .txt files for each factor level ONLY if missing
     for (lvl in levels) {
-      file_path <- file.path(factor_folder, paste0(factor_name, lvl, ".txt"))
+      fp <- file.path(factor_folder, paste0(factor_name, lvl, ".txt"))
       
-      if (!file.exists(file_path)) {
+      if (!file.exists(fp)) {
         placeholder_text <- paste0("[", factor_name, lvl, " – Placeholder tekst]")
-        writeLines(placeholder_text, file_path)
+        writeLines(placeholder_text, fp)
       }
     }
   }
 }
 
-#--- 3.3 Define factor structure + run generator ------------------------------
-factor_specs <- list(
-  A = 1:2,
-  B = 1:2,
-  C = 1:3,
-  D = 1:2,
-  E = 1:2,
-  F = 1:2
-)
+#--- 3.2 Scaffold block (OFF by default) --------------------------------------
+static_folder <- file.path(fragment_base_path, "static")
+dir.create(static_folder, showWarnings = FALSE, recursive = TRUE)
 
-generate_factor_folders(fragment_base_path, factor_specs)
+if (CREATE_PLACEHOLDERS) {
+  
+  message("CREATE_PLACEHOLDERS = TRUE -> creating missing folders/files (no overwrites).")
+  
+  # Placeholder files for static text (ONLY created if missing)
+  static_templates <- list(
+    S1 = "S1 – Klasseoplysninger (ret tekst)\n\n[fx: Klassen består af 22 elever med forskellige forudsætninger.]",
+    S2 = "S2 – Skolekontekst (ret tekst)\n\n[fx: Undervisningen foregår i en almindelig dansk folkeskole.]",
+    S3 = "S3 – Fag og lektionsramme (ret tekst)\n\n[fx: Lektionen handler om danskfaglige kompetencer.]"
+  )
+  
+  for (nm in names(static_templates)) {
+    target <- file.path(static_folder, paste0(nm, ".txt"))
+    if (!file.exists(target)) {
+      write_file(static_templates[[nm]], target)
+    }
+  }
+  
+  # Create factor folders/files
+  factor_specs <- list(
+    A = 1:2,
+    B = 1:2,
+    C = 1:3,
+    D = 1:2,
+    E = 1:2,
+    F = 1:2
+  )
+  
+  generate_factor_folders(fragment_base_path, factor_specs)
+}
 
 #--------------------------------------------------------------
 # 4. Load full factorial design (A–F + id)
 #--------------------------------------------------------------
+if (!file.exists(full_design_file)) stop("Missing file: ", full_design_file)
 load(full_design_file)
 
+if (!exists("full_design")) {
+  stop("Loaded .RData but object `full_design` was not found. Check your saved object name.")
+}
+if (!"id" %in% names(full_design)) stop("`full_design` must contain an `id` column.")
 
 #--------------------------------------------------------------
 # 5. Load vignette-set definitions
 #--------------------------------------------------------------
-set_names <- openxlsx::getSheetNames(vignette_sets_file)
-
+if (!file.exists(vignette_sets)) stop("Missing file: ", vignette_sets)
+set_names <- openxlsx::getSheetNames(vignette_sets)
 
 #--------------------------------------------------------------
 # 6. Helper: Load factor-text fragments
 #--------------------------------------------------------------
-read_factor_texts <- function(folder, prefix, levels){
+read_factor_texts <- function(folder, prefix, levels) {
+  
+  missing <- levels[!file.exists(file.path(folder, paste0(prefix, levels, ".txt")))]
+  if (length(missing) > 0) {
+    stop(
+      "Missing factor text files in folder: ", folder, "\n",
+      "Missing: ", paste0(prefix, missing, ".txt", collapse = ", ")
+    )
+  }
+  
   tibble(
     level = levels,
-    text = map_chr(
+    text  = map_chr(
       levels,
       ~ read_file(file.path(folder, paste0(prefix, .x, ".txt")))
     )
   )
 }
-
 
 #--------------------------------------------------------------
 # 7. Load all varying factor text fragments (A–F)
@@ -130,7 +163,6 @@ text_list <- list(
   F = read_factor_texts(file.path(fragment_base_path, "F"), "F", 1:2)
 )
 
-
 #--------------------------------------------------------------
 # 8. Load header + static text fragments
 #--------------------------------------------------------------
@@ -139,99 +171,121 @@ header_text <- if (file.exists(header_file)) read_file(header_file) else ""
 
 static_files <- list.files(static_folder, pattern = "\\.txt$", full.names = TRUE)
 
+if (length(static_files) == 0) {
+  stop("No static .txt files found in: ", static_folder)
+}
+
 static_texts <- tibble(
-  name = basename(static_files) |> str_remove(".txt"),
+  name = basename(static_files) |> str_remove("\\.txt$"),
   text = map_chr(static_files, read_file)
 )
 
+# Optional: Fail fast if any static file still looks like a placeholder
+if (FAIL_ON_PLACEHOLDERS) {
+  bad_static <- static_texts %>%
+    filter(str_detect(text, "Placeholder|ret tekst|\\[fx:"))
+  
+  if (nrow(bad_static) > 0) {
+    stop(
+      paste0(
+        "These static files still look like placeholders: ",
+        paste(bad_static$name, collapse = ", "),
+        "\nEdit them in: ", static_folder,
+        "\nOr set FAIL_ON_PLACEHOLDERS <- FALSE."
+      )
+    )
+  }
+}
 
 #--------------------------------------------------------------
 # 9. DECLARE THE MERGE ORDER (FULL CONTROL HERE)
 #--------------------------------------------------------------
-# YOU CAN CHANGE THIS ORDER AS YOU WISH.
 merge_order <- c(
   "header",
   "S1",
   "S2",
+  "S3",
   "A",
   "B",
   "C",
-  "S3",
   "D",
   "E",
   "F"
 )
 
+# Validate merge_order keys early
+valid_keys <- c("header", static_texts$name, names(text_list))
+unknown_keys <- setdiff(merge_order, valid_keys)
+if (length(unknown_keys) > 0) {
+  stop("Unknown merge_order key(s): ", paste(unknown_keys, collapse = ", "))
+}
 
 #--------------------------------------------------------------
 # 10. Helper: Fetch correct text fragment
 #--------------------------------------------------------------
-get_fragment_text <- function(element, row_data){
+get_fragment_text <- function(element, row_data) {
   
   # Header
   if (element == "header") return(header_text)
   
   # Static text (e.g., S1, S2, S3)
   if (element %in% static_texts$name) {
-    return(static_texts$text[static_texts$name == element])
+    return(static_texts$text[static_texts$name == element] |> as.character())
   }
   
   # Factor-based text (A–F)
   if (element %in% names(text_list)) {
     lvl <- row_data[[element]]
-    return(text_list[[element]]$text[text_list[[element]]$level == lvl])
+    return(text_list[[element]]$text[text_list[[element]]$level == lvl] |> as.character())
   }
   
   stop(paste("Unknown merge-order key:", element))
 }
 
-
 #--------------------------------------------------------------
 # 11. Construct full vignette text following merge_order
 #--------------------------------------------------------------
-construct_vignette_text <- function(row_data, merge_order){
+construct_vignette_text <- function(row_data, merge_order) {
   
   fragments <- map_chr(
     merge_order,
     ~ get_fragment_text(.x, row_data)
   )
   
-  vignette <- paste(fragments, collapse = "\n\n")
-  return(vignette)
+  paste(fragments, collapse = "\n\n")
 }
-
 
 #--------------------------------------------------------------
 # 12. Generate all vignette text files for each set
 #--------------------------------------------------------------
-for (s in seq_along(set_names)) {
+for (set_name in set_names) {
   
-  set_name <- set_names[s]
-  
-  # Create folder for this vignette set
   set_folder <- file.path(output_path, set_name)
-  dir.create(set_folder, showWarnings = FALSE)
+  dir.create(set_folder, showWarnings = FALSE, recursive = TRUE)
   
-  # Read vignette IDs for this set
-  set_data <- openxlsx::read.xlsx(vignette_sets_file, sheet = set_name)
+  set_data <- openxlsx::read.xlsx(vignette_sets, sheet = set_name)
   
-  # Loop over vignette rows
+  if (!"id" %in% names(set_data)) {
+    stop("Sheet '", set_name, "' must contain an `id` column.")
+  }
+  
   for (i in 1:nrow(set_data)) {
     
-    vign_id  <- set_data$id[i]
+    vign_id <- set_data$id[i]
+    
     row_data <- full_design %>% filter(id == vign_id)
+    if (nrow(row_data) != 1) {
+      stop("Could not uniquely match vignette id = ", vign_id, " in `full_design`.")
+    }
     
     vignette_text <- construct_vignette_text(row_data, merge_order)
     
-    # Write output file
-    writeLines(
-      vignette_text,
-      file.path(set_folder, paste0("vignette_", vign_id, ".txt"))
-    )
+    out_file <- file.path(set_folder, paste0("vignette_", vign_id, ".txt"))
+    writeLines(vignette_text, out_file)
   }
 }
 
 cat("\n-----------------------------------------\n")
 cat("Vignette text generation complete.\n")
+cat("Output folder: ", output_path, "\n")
 cat("-----------------------------------------\n")
-
