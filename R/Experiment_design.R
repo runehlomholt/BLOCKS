@@ -93,6 +93,62 @@ evaluate_block <- function(blocked_design, set_size){
   )
 }
 
+check_data_integrity_xlsx <- function(df, xlsx_path, sheet = "Full_factorial") {
+  # Read back from Excel
+  x <- openxlsx::read.xlsx(xlsx_path, sheet = sheet)
+  
+  # Helper: normalise types for robust comparison
+  normalise <- function(d) {
+    d <- as.data.frame(d, stringsAsFactors = FALSE)
+    
+    # Ensure same column order as df (if possible)
+    common <- intersect(names(df), names(d))
+    d <- d[, common, drop = FALSE]
+    
+    # Coerce character-like to character; keep numeric as numeric where possible
+    for (nm in names(d)) {
+      if (is.factor(d[[nm]])) d[[nm]] <- as.character(d[[nm]])
+    }
+    d
+  }
+  
+  df_n <- normalise(df)
+  x_n  <- normalise(x)
+  
+  # Basic structure checks
+  same_nrow  <- nrow(df_n) == nrow(x_n)
+  same_ncol  <- ncol(df_n) == ncol(x_n)
+  same_names <- identical(names(df_n), names(x_n))
+  
+  # ID check if present
+  id_ok <- NA
+  if ("id" %in% names(df_n) && "id" %in% names(x_n)) {
+    id_ok <- identical(as.integer(df_n$id), as.integer(x_n$id))
+  }
+  
+  # Cell-by-cell equality (after coercions)
+  # Convert to character matrix for strict equality across types
+  df_mat <- as.matrix(data.frame(lapply(df_n, as.character), check.names = FALSE))
+  x_mat  <- as.matrix(data.frame(lapply(x_n,  as.character), check.names = FALSE))
+  
+  same_cells <- identical(df_mat, x_mat)
+  
+  # If not identical, count mismatches
+  mismatch_n <- NA_integer_
+  if (same_nrow && same_ncol && same_names) {
+    mismatch_n <- sum(df_mat != x_mat, na.rm = TRUE)
+  }
+  
+  list(
+    file_exists   = file.exists(xlsx_path),
+    same_nrow     = same_nrow,
+    same_ncol     = same_ncol,
+    same_colnames = same_names,
+    id_matches    = id_ok,
+    identical_all_cells = same_cells,
+    n_cell_mismatches   = mismatch_n
+  )
+}
 #----------------------------------------------------------------------------------------
 # 6. Generate blocked designs and compare quality (in this example 3, 4, 6 per set)
 #----------------------------------------------------------------------------------------
@@ -162,3 +218,4 @@ print("Design generation complete.")
 #--------------------------------------------------------------
 # End of script
 #--------------------------------------------------------------
+
