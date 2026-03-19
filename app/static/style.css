@@ -26,7 +26,7 @@ body {
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  padding: 16px 16px 24px;
+  padding: 12px; /* slightly reduced for more usable width */
 }
 
 /* =================================================
@@ -87,29 +87,37 @@ body {
 ================================================= */
 
 .instruction {
-  margin: 0 0 18px;
+  margin: 0 0 16px;
   font-size: 22px;
   font-weight: 700;
   color: #111827;
 }
 
 /* =================================================
-   Vignette box
+   Vignette box (UPDATED)
 ================================================= */
 
 .vignette-box {
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 20px;
+  padding: 12px;
   margin-bottom: 24px;
 }
 
 .vignette-text {
-  font-size: 16px;
-  line-height: 1.5;
-  white-space: pre-line;
-  margin: 0;
+  width: 100%;
+  max-width: none; /* allow full width */
+  font-size: clamp(14px, 1.2vw, 16px);
+  line-height: 1.35; /* slightly more open */
+}
+
+.vignette-text p {
+  margin: 0 0 18px; /* extra paragraph spacing */
+}
+
+.vignette-text p:last-child {
+  margin-bottom: 0;
 }
 
 /* =================================================
@@ -122,7 +130,7 @@ body {
 }
 
 .battery-heading {
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   font-size: 18px;
   font-weight: 600;
   color: #1f2933;
