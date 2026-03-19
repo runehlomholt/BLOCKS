@@ -20,12 +20,13 @@ body {
 ================================================= */
 
 .page {
-  max-width: 960px;
-  margin: 40px auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 12px auto;
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  padding: 32px 40px 40px;
+  padding: 16px 16px 24px;
 }
 
 /* =================================================
@@ -36,6 +37,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 28px;
 }
 
@@ -47,6 +49,7 @@ body {
 
 .logo {
   height: 40px;
+  max-width: 100%;
 }
 
 /* =================================================
@@ -80,6 +83,17 @@ body {
 }
 
 /* =================================================
+   Instruction
+================================================= */
+
+.instruction {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* =================================================
    Vignette box
 ================================================= */
 
@@ -91,57 +105,110 @@ body {
   margin-bottom: 24px;
 }
 
-.vignette-box h2 {
-  margin: 0 0 14px;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.vignette-text p {
-  margin: 0 0 10px 0;
-}
-
 .vignette-text {
   font-size: 16px;
   line-height: 1.5;
   white-space: pre-line;
+  margin: 0;
 }
 
 /* =================================================
-   Question matrix
+   Battery block
 ================================================= */
+
+.battery-block {
+  margin-top: 28px;
+  margin-bottom: 24px;
+}
+
+.battery-heading {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2933;
+}
+
+/* =================================================
+   Matrix layout
+================================================= */
+
+.matrix-scroll {
+  width: 100%;
+  overflow-x: hidden;
+}
 
 .matrix {
   width: 100%;
+  max-width: 100%;
+  table-layout: auto;
   border-collapse: collapse;
-  margin-bottom: 36px;
+  margin-bottom: 0;
+}
+
+.matrix col.col-question {
+  width: auto;
+}
+
+.matrix col.col-option {
+  width: 1%;
+}
+
+.matrix th,
+.matrix td {
+  min-width: 0;
 }
 
 .matrix thead th {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 10px 8px;
+  padding: 8px 6px;
   text-align: center;
   color: #374151;
+  line-height: 1.2;
+  vertical-align: bottom;
 }
 
-.matrix tbody td {
-  padding: 12px 8px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.matrix tbody tr:nth-child(odd) {
-  background-color: #fafafa;
-}
-
-.matrix .question-text {
-  width: 42%;
-  font-size: 15px;
+.matrix thead th:first-child {
   text-align: left;
 }
 
-.matrix .option {
+.matrix thead th.option,
+.matrix td.option {
+  white-space: nowrap;
   text-align: center;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.matrix tbody tr:nth-child(odd) {
+  background-color: #f3dede;
+}
+
+.matrix tbody tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+.matrix tbody td {
+  padding: 12px 6px;
+  border-top: none;
+  vertical-align: middle;
+}
+
+.matrix td.question-text {
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  hyphens: auto;
+  padding-right: 14px;
+}
+
+.matrix td.option input[type="radio"] {
+  margin: 0;
+  transform: scale(1.05);
 }
 
 /* =================================================
@@ -149,7 +216,6 @@ body {
 ================================================= */
 
 input[type="radio"] {
-  transform: scale(1.15);
   cursor: pointer;
 }
 
@@ -159,11 +225,10 @@ input[type="radio"] {
 
 .navigation {
   display: flex;
-  justify-content: flex-end;   /* right-align buttons */
+  justify-content: flex-end;
   align-items: center;
   margin-top: 24px;
 }
-
 
 button {
   font-size: 15px;
@@ -202,7 +267,7 @@ button:disabled {
   padding: 32px;
   background: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 .attention-box h2 {
