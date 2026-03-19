@@ -39,9 +39,11 @@
        Vignette text
   ========================== -->
   <div class="vignette-box">
-    <p class="vignette-text">
-      {{ vignette.text }}
-    </p>
+    <div class="vignette-text">
+      {% for paragraph in vignette.text.split('\n\n') if paragraph.strip() %}
+        <p>{{ paragraph.strip() }}</p>
+      {% endfor %}
+    </div>
   </div>
 
   <!-- =========================
