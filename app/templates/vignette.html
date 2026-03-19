@@ -62,43 +62,49 @@
           {% set scale_values = battery.scale["values"] %}
           {% set scale_labels = battery.scale["labels"] %}
 
-          <div
-            class="battery-matrix"
-            style="
-              display: grid;
-              grid-template-columns: 2fr repeat({{ scale_values | length }}, 1fr);
-              gap: 10px 12px;
-              align-items: center;
-            "
-          >
+          <div class="matrix-scroll">
+            <table class="matrix" style="--scale-count: {{ scale_values | length }};">
+              <colgroup>
+                <col class="col-question">
+                {% for val in scale_values %}
+                  <col class="col-option">
+                {% endfor %}
+              </colgroup>
 
-            <!-- Scale header -->
-            <div></div>
-            {% for label in scale_labels %}
-              <div class="scale-label">
-                {{ label }}
-              </div>
-            {% endfor %}
+              <thead>
+                <tr>
+                  <th></th>
+                  {% for label in scale_labels %}
+                    <th class="option">
+                      {{ label }}
+                    </th>
+                  {% endfor %}
+                </tr>
+              </thead>
 
-            <!-- Questions -->
-            {% for q in battery.questions %}
-              <div class="question-text">
-                {{ q.question_text }}
-              </div>
+              <tbody>
+                {% for q in battery.questions %}
+                  <tr>
+                    <td class="question-text">
+                      {{ q.question_text }}
+                    </td>
 
-              {% for val in scale_values %}
-                <div class="option">
-                  <input
-                    type="radio"
-                    name="battery_{{ q.question_id }}"
-                    value="{{ val }}"
-                    required
-                  >
-                </div>
-              {% endfor %}
-            {% endfor %}
-
+                    {% for val in scale_values %}
+                      <td class="option">
+                        <input
+                          type="radio"
+                          name="battery_{{ q.question_id }}"
+                          value="{{ val }}"
+                          required
+                        >
+                      </td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
+
         </div>
 
       {% endfor %}
