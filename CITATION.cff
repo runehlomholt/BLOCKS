@@ -1,14 +1,14 @@
-cff-version: 1.2.0
+cff-version: 1.2.1
 message: "If you use this software in your research, please cite it as below."
 
 title: "BLOCKS: Blocked Vignette Designs for Case Studies"
 type: software
-version: 1.2.0
+version: 1.2.1
 
 authors:
   - family-names: Lomholt
     given-names: Rune
-    affiliation: Københavns Professionshøjskole
+    affiliation: University College Copenhagen
     orcid: "https://orcid.org/0000-0002-5333-3234"
 
 year: 2026
@@ -21,7 +21,7 @@ abstract: >
   while the application handles experimental delivery and data collection.
 
 repository-code: "https://github.com/runehlomholt/BLOCKS"
-doi: "10.5281/zenodo.18233715"
+doi: "10.5281/zenodo.19106987"
 
 license: MIT
 
@@ -40,6 +40,6 @@ preferred-citation:
       given-names: Rune
   title: "BLOCKS: Blocked Vignette Designs for Case Studies"
   year: 2026
-  version: 1.2.0
-  doi: "10.5281/zenodo.18233715"
+  version: 1.2.1
+  doi: "10.5281/zenodo.19106987"
   repository-code: "https://github.com/runehlomholt/BLOCKS"
