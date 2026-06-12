@@ -119,6 +119,12 @@ body {
   line-height: 1.35; /* slightly more open */
 }
 
+.vignette-title {
+  margin: 0 0 20px;
+  font-size: clamp(20px, 1.6vw, 28px);
+  line-height: 1.2;
+}
+
 .vignette-text p {
   margin: 0 0 18px; /* extra paragraph spacing */
 }

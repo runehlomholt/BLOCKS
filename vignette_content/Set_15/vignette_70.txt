@@ -1,25 +1,19 @@
-Header placeholder text.
+Example vignette text
 
-S1 – EXAMPLETEXT
+It is early in the morning, and Alex is getting ready for the day.
 
-[EXAMPLETEXT]
+Before beginning work, Alex decides to make a cup of coffee.
 
-S2 – EXAMPLETEXT
+The familiar morning routine feels calm and unhurried.
 
-[EXAMPLETEXT]
+Alex chooses a mild, light-roasted coffee.
 
-S3 – EXAMPLETEXT
+The coffee is poured into a large blue mug.
 
-[EXAMPLETEXT]
+Alex adds a small amount of oat milk to the coffee.
 
-[A2 placeholder text]
+Alex stands for a moment beside the kitchen window.
 
-[B1 placeholder text]
+The room is quiet while the coffee cools slightly.
 
-[C3 placeholder text]
-
-[D2 placeholder text]
-
-[E1 placeholder text]
-
-[F2 placeholder text]
+The first sip is still a little hot, so Alex waits before trying again.

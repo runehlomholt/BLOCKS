@@ -40,7 +40,11 @@
   ========================== -->
   <div class="vignette-box">
     <div class="vignette-text">
-      {% for paragraph in vignette.text.split('\n\n') if paragraph.strip() %}
+      {% set paragraphs = vignette.text.split('\n\n') %}
+      {% if paragraphs and paragraphs[0].strip() %}
+        <h3 class="vignette-title">{{ paragraphs[0].strip() }}</h3>
+      {% endif %}
+      {% for paragraph in paragraphs[1:] if paragraph.strip() %}
         <p>{{ paragraph.strip() }}</p>
       {% endfor %}
     </div>

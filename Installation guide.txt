@@ -64,8 +64,8 @@ The included illustrative design can be regenerated from the repository root:
 
 Rscript scripts/run_design_workflow.R
 
-This creates 24 balanced sets containing four placeholder vignettes each and
-updates vignette_content.
+This creates 24 balanced sets containing four illustrative morning-coffee
+vignettes each and updates vignette_content.
 
 The workflow is divided into numbered stages in scripts/. Study settings are
 kept in config/workflow_config.R so factor levels, block size, random seed, and

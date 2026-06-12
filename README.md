@@ -62,8 +62,8 @@ Example scripts included:
 This repository includes an example vignette text fragment folder illustrating how the vignette text generator works.
 
 The committed example is intentionally substantive-free: it contains 96
-placeholder vignettes arranged into 24 balanced sets of four. Regenerate the
-same illustrative workflow from the repository root with:
+variations of a short morning-coffee story arranged into 24 balanced sets of
+four. Regenerate the same illustrative workflow from the repository root with:
 
 ```bash
 Rscript scripts/run_design_workflow.R
@@ -208,7 +208,19 @@ Answer-change count records how often a participant revised a selected answer
 before submission. It may indicate reconsideration, but is not by itself a
 measure of insecurity.
 
-After adding `DATABASE_URL` to `~/.Renviron`, run the read-only database monitor:
+The read-only database monitor is `scripts/03a_monitor_database.R`. Its first
+lines contain a visible placeholder where a new user can paste Railway's public
+PostgreSQL URL:
+
+```r
+database_url <- "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+```
+
+Restore the placeholder before committing or publishing because a real URL
+contains the database password. As a safer alternative, add `DATABASE_URL` to
+`~/.Renviron`; an environment variable overrides the placeholder line.
+
+Run the monitor from the repository root:
 
 ```bash
 Rscript scripts/03a_monitor_database.R

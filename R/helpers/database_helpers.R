@@ -9,12 +9,21 @@ require_database_packages <- function() {
   }
 }
 
-get_database_url <- function() {
-  database_url <- Sys.getenv("DATABASE_URL")
+get_database_url <- function(database_url = NULL) {
+  if (is.null(database_url) || !nzchar(database_url)) {
+    database_url <- Sys.getenv("DATABASE_URL")
+  }
   if (!nzchar(database_url)) {
     stop(
-      "DATABASE_URL is not set. Add the Railway PostgreSQL URL to .Renviron ",
-      "or set it for the current R session with Sys.setenv()."
+      "No database URL is configured. Edit the database_url line near the top ",
+      "of scripts/03a_monitor_database.R or set DATABASE_URL in .Renviron."
+    )
+  }
+  if (grepl("USER:PASSWORD@HOST:PORT/DATABASE", database_url, fixed = TRUE)) {
+    stop(
+      "The database monitor still contains its placeholder URL. Replace the ",
+      "database_url line near the top of scripts/03a_monitor_database.R with ",
+      "Railway's public PostgreSQL URL, or set DATABASE_URL in .Renviron."
     )
   }
   database_url
@@ -68,9 +77,13 @@ parse_database_url <- function(database_url) {
   if (is.null(value) || !nzchar(value)) fallback else value
 }
 
-connect_blocks_database <- function() {
+connect_blocks_database <- function(database_url = NULL) {
   require_database_packages()
-  config <- parse_database_url(get_database_url())
+  config <- parse_database_url(get_database_url(database_url))
+  message(
+    "Connecting read-only monitor to PostgreSQL at ",
+    config$host, ":", config$port, "/", config$dbname, " ..."
+  )
   DBI::dbConnect(
     RPostgres::Postgres(),
     dbname = config$dbname,

@@ -3,11 +3,22 @@
 # Purpose: Read-only monitoring of a deployed BLOCKS PostgreSQL database.
 # ==============================================================================
 
+# QUICK START
+# 1. Copy the public PostgreSQL URL from Railway's PostgreSQL service.
+# 2. Replace the placeholder below with that URL.
+# 3. From the repository root, run:
+#      Rscript scripts/03a_monitor_database.R
+#
+# Never commit a real database URL: it contains the database password. Restore
+# this placeholder before publishing or sharing your branch.
+
+database_url <- "YOUR_URL_HERE"
+
 source(file.path("scripts", "00_setup.R"))
 source(file.path(path_helpers, "database_helpers.R"))
 
-run_database_monitor <- function() {
-connection <- connect_blocks_database()
+run_database_monitor <- function(database_url) {
+connection <- connect_blocks_database(database_url)
 on.exit(DBI::dbDisconnect(connection), add = TRUE)
 assert_blocks_schema(connection)
 
@@ -165,4 +176,4 @@ cat("\nATTENTION-GATE DIAGNOSTIC\n")
 print(tibble::as_tibble(attention_gate_diagnostic), n = Inf)
 }
 
-run_database_monitor()
+run_database_monitor(database_url)
