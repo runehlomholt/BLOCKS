@@ -81,8 +81,9 @@
                 <tr>
                   <th></th>
                   {% for label in scale_labels %}
-                    <th class="option">
-                      {{ label }}
+                    <th class="option" scope="col">
+                      <span class="scale-value">{{ scale_values[loop.index0] }}</span>
+                      <span class="scale-label">{{ label }}</span>
                     </th>
                   {% endfor %}
                 </tr>
@@ -102,10 +103,9 @@
                             type="radio"
                             name="battery_{{ q.question_id }}"
                             value="{{ val }}"
-                            aria-label="{{ q.question_text }}: {{ scale_labels[loop.index0] }}"
+                            aria-label="{{ q.question_text }}: {{ val }}{% if scale_labels[loop.index0] %}, {{ scale_labels[loop.index0] }}{% endif %}"
                             required
                           >
-                          <span class="option-value" aria-hidden="true">{{ val }}</span>
                         </label>
                       </td>
                     {% endfor %}
