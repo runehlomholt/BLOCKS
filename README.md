@@ -49,9 +49,11 @@ Use R to:
 - Generate vignette texts programmatically
 
 Example scripts included:
-- `Experiment_design.R`
-- `Vignette_text_generator.R`
-- `inspect_data_integrity_check.R`
+- `scripts/00_setup.R`
+- `scripts/01a_define_study_design.R`
+- `scripts/01b_generate_factorial_design.R`
+- `scripts/01c_construct_and_evaluate_vignette_sets.R`
+- `scripts/02a_generate_vignette_texts.R`
 
 ---
 
@@ -64,12 +66,22 @@ placeholder vignettes arranged into 24 balanced sets of four. Regenerate the
 same illustrative workflow from the repository root with:
 
 ```bash
-Rscript R/Experiment_design.R
-Rscript R/Vignette_text_generator.R
+Rscript scripts/run_design_workflow.R
 ```
 
-The first command writes the reproducible design artifacts to `R/`. The second
-keeps `R/generated_vignettes/` and the app's `vignette_content/` folder in sync.
+The staged workflow separates configuration, factorial generation, blocked-set
+construction, and text generation. Edit factor levels, block sizes, seed, and
+merge order in `config/workflow_config.R`. Generated design artifacts are
+written to `R/`, while `R/generated_vignettes/` and the app's
+`vignette_content/` folder remain synchronized.
+
+Individual stages can also be run separately:
+
+```bash
+Rscript scripts/01b_generate_factorial_design.R
+Rscript scripts/01c_construct_and_evaluate_vignette_sets.R
+Rscript scripts/02a_generate_vignette_texts.R
+```
 
 The vignette text generator:
 - Combines static text fragments and factor-level text fragments
@@ -185,6 +197,22 @@ commit the key to GitHub.
 Answer-change count records how often a participant revised a selected answer
 before submission. It may indicate reconsideration, but is not by itself a
 measure of insecurity.
+
+After adding `DATABASE_URL` to `~/.Renviron`, run the read-only database monitor:
+
+```bash
+Rscript scripts/03a_monitor_database.R
+```
+
+After downloading an export, validate it with:
+
+```bash
+Rscript scripts/03b_check_export_integrity.R vignette_data.csv
+```
+
+The reset utility is intentionally harder to invoke and should only be used
+before a new collection run. It requires `BLOCKS_ALLOW_DATABASE_RESET=YES` and
+an exact interactive confirmation in R/RStudio.
 
 ### Production configuration
 

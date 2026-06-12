@@ -62,11 +62,14 @@ BLOCKS/
 
 The included illustrative design can be regenerated from the repository root:
 
-Rscript R/Experiment_design.R
-Rscript R/Vignette_text_generator.R
+Rscript scripts/run_design_workflow.R
 
 This creates 24 balanced sets containing four placeholder vignettes each and
 updates both R/generated_vignettes and vignette_content.
+
+The workflow is divided into numbered stages in scripts/. Study settings are
+kept in config/workflow_config.R so factor levels, block size, random seed, and
+text merge order can be changed without editing the processing scripts.
 
 Text file requirements
 	•	Each .txt file should contain one complete vignette.
@@ -117,6 +120,10 @@ pip install -r requirements.txt
 	•	Vignettes appear as expected in the interface
 	•	Database migrations run with: alembic upgrade head
 	•	The export endpoint rejects requests without the configured EXPORT_KEY
+	•	The database monitor runs after DATABASE_URL is set:
+		Rscript scripts/03a_monitor_database.R
+	•	A downloaded CSV passes:
+		Rscript scripts/03b_check_export_integrity.R vignette_data.csv
 
 ⸻
 
