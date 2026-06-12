@@ -3,7 +3,7 @@ message: "If you use this software in your research, please cite it as below."
 
 title: "BLOCKS: an application for administering blocked, text-based factorial vignette studies"
 type: software
-version: 1.2.1
+version: 2.0.0
 
 authors:
   - family-names: Lomholt
@@ -14,11 +14,14 @@ authors:
 year: 2026
 
 abstract: >
-  An open-source web application for administering blocked vignette
-  experiments. The app supports researcher-defined blocked designs, dynamic
-  loading of vignette sets, attention checks, and export of analysis-ready data.
-  Experimental designs and vignette texts are generated externally (e.g. in R),
-  while the application handles experimental delivery and data collection.
+  BLOCKS is an open-source FastAPI application for administering blocked, 
+  text-based factorial vignette studies. Version 2.0.0 introduces modular 
+  application architecture, concurrency-safe quota allocation, resumable 
+  participation, lifecycle tracking, server-side validation, expanded 
+  paradata, protected episode-level export, database monitoring, database 
+  migrations, automated tests, and a staged R design workflow. Outcome 
+  variables and response scales remain configurable through structured 
+  Excel workbooks.
 
 repository-code: "https://github.com/runehlomholt/BLOCKS"
 doi: "10.5281/zenodo.19106987"
@@ -40,6 +43,6 @@ preferred-citation:
       given-names: Rune
   title: "BLOCKS: an application for administering blocked, text-based factorial vignette studies"
   year: 2026
-  version: 1.2.1
+  version: 2.0.0
   doi: "10.5281/zenodo.19106987"
   repository-code: "https://github.com/runehlomholt/BLOCKS"
