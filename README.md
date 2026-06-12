@@ -256,6 +256,11 @@ pytest -q
 
 BLOCKS is released under the MIT License and may be used, adapted, and extended.
 
-Please cite:
+To cite this exact release:
 
-Lomholt, R. (2026). *BLOCKS: an application for administering blocked, text-based factorial vignette studies* (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.19106987
+Lomholt, R. (2026). BLOCKS ... (Version 2.0.0).
+Zenodo. https://doi.org/10.5281/zenodo.20671911
+
+For the latest version of BLOCKS:
+
+https://doi.org/10.5281/zenodo.17974420
