@@ -57,6 +57,15 @@ body {
   max-width: 100%;
 }
 
+.app-wordmark {
+  display: inline-block;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
 /* =================================================
    Progress bar
 ================================================= */
