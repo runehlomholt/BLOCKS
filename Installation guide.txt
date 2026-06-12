@@ -1,154 +1,356 @@
-BLOCKS – Installation and Deployment Guide
+BLOCKS - Installation and Deployment Guide
+==========================================
+
+This guide covers preparing an experiment, testing it locally, deploying it on
+Railway, connecting PostgreSQL, testing export, and monitoring data collection.
 
 
-1. Required Accounts
+1. What you need
+----------------
 
-Before you start, you need two accounts:
+- A GitHub account: https://github.com
+- A Railway account: https://railway.com
+- Git and Python installed for local development
+- R and RStudio if you will generate designs or use the monitoring scripts
 
-1. GitHub account
-	•	Create an account at https://github.com
-	•	GitHub is used to host the source code and manage your own copy of the app.
+Railway's interface and pricing can change. The current official guides are:
 
-2. Railway account
-	•	Create an account at https://railway.app
-	•	Railway is used to deploy and host the BLOCKS app online.
-	•	During setup, Railway will ask you to connect your GitHub account.
+- FastAPI deployment: https://docs.railway.com/guides/fastapi
+- PostgreSQL: https://docs.railway.com/databases/postgresql
+- GitHub auto-deployments: https://docs.railway.com/deployments/github-autodeploys
+- Public networking: https://docs.railway.com/networking/public-networking
 
-⸻
 
-2. Fork the BLOCKS Repository
-	1.	Go to the BLOCKS repository:
-https://github.com/runehlomholt/BLOCKS
-	2.	Click the “Fork” button (top right).
-	•	This creates a copy of the repository under your own GitHub account.
-	3.	You will now have your own version of BLOCKS, for example:
-https://github.com/YOUR_USERNAME/BLOCKS
+2. Create your own GitHub copy
+------------------------------
 
-(Optional – local copy)
+1. Open https://github.com/runehlomholt/BLOCKS.
+2. Select Fork to create a repository under your own GitHub account.
+3. Clone your fork if you want a local working copy:
 
-If you want to work locally on your computer:
-	•	Clone your fork using Git:
-git clone https://github.com/YOUR_USERNAME/BLOCKS.git
-	•	Enter the project folder:
-cd BLOCKS
+   git clone https://github.com/YOUR_USERNAME/BLOCKS.git
+   cd BLOCKS
 
-⸻
+4. Create a branch before changing a study. Keep the original main branch as a
+   recoverable base and deploy the branch you intend to test.
 
-3. Prepare the Vignette Text Files (IMPORTANT)
+Commit and push all required files. Railway cannot deploy files that exist only
+on your computer.
 
-BLOCKS uses plain .txt files organised in a specific folder structure to define vignette content.
-Each vignette is stored as a separate text file, and the folder structure determines how vignettes are grouped and loaded by the app.
 
-General rules
-	•	Vignette content must be written in plain text (.txt) files.
-	•	Files must be placed in the correct folder structure inside the repository.
-	•	Folder and file names must match what the app expects.
-	•	The app reads vignette content directly from these files at runtime.
+3. Prepare the experiment
+-------------------------
 
-Typical structure (example)
+3.1 Generate or replace the vignette design
 
-BLOCKS/
-├── vignette_content/
-│   ├── Set_1/
-│   │   ├── vignette_01.txt
-│   │   ├── vignette_02.txt
-│   │   └── vignette_03.txt
-│   ├── Set_2/
-│   │   ├── vignette_01.txt
-│   │   └── vignette_02.txt
-│   └── ...
-├── app files
-└── configuration files
+The repository includes an illustrative design with 96 morning-coffee
+vignettes in 24 sets of four. From the repository root, install the required R
+packages once:
 
-The included illustrative design can be regenerated from the repository root:
+   install.packages(c(
+     "AlgDesign", "openxlsx", "dplyr", "tibble", "xml2", "zip",
+     "purrr", "readr"
+   ))
 
-Rscript scripts/run_design_workflow.R
+Then run the complete workflow:
 
-This creates 24 balanced sets containing four illustrative morning-coffee
-vignettes each and updates vignette_content.
+   Rscript scripts/run_design_workflow.R
 
-The workflow is divided into numbered stages in scripts/. Study settings are
-kept in config/workflow_config.R so factor levels, block size, random seed, and
-text merge order can be changed without editing the processing scripts.
+Edit `config/workflow_config.R` to change factor levels, block size, random
+seed, optimisation repetitions, or text-fragment merge order. Edit source text
+under `R/text_fragments/` for a new study.
 
-Canonical design outputs are stored in outputs/. The .rds files preserve R
-object types and are used between workflow stages. The .xlsx files are intended
-only for human inspection.
+The workflow produces:
 
-Text file requirements
-	•	Each .txt file should contain one complete vignette.
-	•	Write the vignette exactly as it should appear to participants. Generate vignettes using the R script.
-	
-⸻
+- `outputs/full_factorial_design.rds`: typed machine-readable factorial design
+- `outputs/blocked_design.rds`: typed machine-readable selected sets
+- `outputs/full_factorial_design.xlsx`: human inspection copy
+- `outputs/vignette_sets.xlsx`: human inspection and evaluation copy
+- `vignette_content/Set_*/vignette_*.txt`: content read by the web app
 
-4. Deploy the App on Railway
-	1.	Log in to Railway:
-https://railway.app
-	2.	Create a new project:
-	•	Choose “Deploy from GitHub repository”.
-	3.	Connect GitHub to Railway (if not already connected):
-	•	Authorise Railway to access your GitHub repositories.
-	4.	Select your forked BLOCKS repository from the list.
-	5.	Configure deployment:
-	•	Add a strong, unique EXPORT_KEY environment variable in Railway.
-	•	Set DESIGN_VERSION and APP_VERSION so exported records identify the deployed experiment.
-	•	Railway supplies DATABASE_URL when PostgreSQL is attached.
-	•	Railway automatically assigns a PORT and builds the app.
-	6.	Click “Deploy”.
+RDS files are used between workflow stages. XLSX files in `outputs/` are for
+inspection. Do not use the inspection workbooks as machine inputs.
 
-Railway will:
-	•	Build the app
-	•	Start the server
-	•	Generate a public URL for your BLOCKS instance
+Every set normally needs the same number of vignette files. The application
+stops at startup if set sizes differ, unless `ALLOW_UNBALANCED_SETS=1` is set
+deliberately.
 
-⸻
 
-5. Updating the App
-	•	Any change you push to your GitHub repository (including updated vignette .txt files)
-will automatically trigger a new deployment on Railway.
-	•	This makes it easy to update vignette content without redeploying manually.
+3.2 Define outcome variables and response scales
 
-⸻
+The outcome variables presented after every vignette are controlled by Excel
+workbooks in `question_batteries/`. Keep or replace the example workbook.
 
-6. Optional: Run BLOCKS Locally
+Every workbook must contain:
 
-If you want to test the app locally before deploying:
-	1.	Install required software (see README):
-	•	Programming language runtime (e.g. Python)
-	•	Required libraries (via requirements.txt or equivalent)
-	2.	Install dependencies:
-pip install -r requirements.txt
-	3.	Start the app locally following the README instructions.
-	4.	Verify that:
-	•	Vignette text files load correctly
-	•	Vignettes appear as expected in the interface
-	•	Database migrations run with: alembic upgrade head
-	•	The export endpoint rejects requests without the configured EXPORT_KEY
-	•	The database monitor runs after DATABASE_URL is set:
-		Rscript scripts/03a_monitor_database.R
-	•	A downloaded CSV passes:
-		Rscript scripts/03b_check_export_integrity.R vignette_data.csv
+- `question_id`: a stable, globally unique item ID and future CSV column name
+- `question_text`: the item text shown to the respondent
+- `scale_min`: lowest permitted integer value
+- `scale_max`: highest permitted integer value
+- `scale_labels`: one semicolon-separated label for every scale value
 
-⸻
+The first data row defines the scale shared by all items in that workbook. A
+1-5 scale must therefore have five labels. Example:
 
-7. Troubleshooting
-	•	Railway cannot see your repository
-	•	Check that GitHub is connected in Railway settings.
-	•	Deployment fails
-	•	Open the Railway logs to inspect build or runtime errors.
-	•	Common issues include missing folders or incorrectly named vignette files.
-	•	Vignette content does not appear
-	•	Double-check folder names and file locations.
-	•	Ensure .txt files were committed and pushed to GitHub, not only saved locally.
+   Strongly disagree;Disagree;Neither;Agree;Strongly agree
 
-⸻
+To define the heading displayed above a battery, create a text file beside the
+workbook using the same filename stem:
 
-8. Summary
+   question_batteries/Battery_1_example.xlsx
+   question_batteries/Battery_1_example_heading.txt
 
-To run BLOCKS, you must:
-	•	Create GitHub and Railway accounts
-	•	Fork the BLOCKS repository
-	•	Prepare and correctly place vignette .txt files
-	•	Deploy the forked repository via Railway
+The app fails visibly at startup if no battery loads or if required workbook
+columns or scale labels are invalid. Duplicate question IDs are rejected when
+a response is submitted.
 
-Once deployed, BLOCKS is accessible via a public URL and updates automatically whenever you push changes.
+
+4. Test locally
+---------------
+
+From the repository root, create a Python environment and install development
+dependencies:
+
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements-dev.txt
+
+For Windows PowerShell, activate with:
+
+   .venv\Scripts\Activate.ps1
+
+Configure a local export key and identifying version values:
+
+   export EXPORT_KEY="replace-with-a-local-test-key"
+   export APP_VERSION="local-test"
+   export DESIGN_VERSION="example-design"
+
+When `DATABASE_URL` is absent, the app uses `sqlite:///./app.db`. Apply database
+migrations and start the server:
+
+   alembic upgrade head
+   uvicorn app.main:app --reload
+
+Open:
+
+   http://127.0.0.1:8000/?token=test-respondent-001
+
+Test the following behavior:
+
+1. All vignettes and Excel-defined outcome items display correctly.
+2. Every item must be answered before `Next` succeeds.
+3. The progress display advances and the attention check appears once.
+4. Closing and reopening the same token resumes at the first unanswered page.
+5. Submitting the final vignette opens the finished page.
+6. A second token receives a stored assignment independently.
+
+Test the protected export:
+
+   curl -H "Authorization: Bearer replace-with-a-local-test-key" \
+     http://127.0.0.1:8000/export -o vignette_data.csv
+
+Requests without the key should return `401 Unauthorized`. If the response is
+`{"detail":"Export is not configured"}`, `EXPORT_KEY` was not set in the
+environment before the server started.
+
+Run the automated tests:
+
+   pytest -q
+
+
+5. Deploy on Railway
+--------------------
+
+5.1 Create the web service
+
+1. Log in to Railway and create a new project.
+2. Choose Deploy from GitHub repo.
+3. Authorise Railway to access your GitHub account if requested.
+4. Select your BLOCKS fork.
+5. In the web service settings, confirm that the deployment trigger branch is
+   the branch you want to test. Pushes to that connected branch trigger new
+   deployments automatically.
+
+The repository includes this `Procfile` command:
+
+   alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+
+It applies migrations before starting the application.
+
+
+5.2 Add PostgreSQL
+
+1. On the Railway project canvas, select + New.
+2. Add a PostgreSQL database service.
+3. Open the BLOCKS web service, then its Variables settings.
+4. Add a variable reference named `DATABASE_URL` that points to the PostgreSQL
+   service's `DATABASE_URL` variable. Using a Railway variable reference keeps
+   the app connection synchronized with the database service.
+
+Do not substitute the app's public web URL here. `DATABASE_URL` must be the
+PostgreSQL connection string.
+
+
+5.3 Set application variables
+
+Add these variables to the BLOCKS web service:
+
+- `EXPORT_KEY`: a long, unique secret; required for CSV export
+- `APP_VERSION`: the deployed application or release identifier
+- `DESIGN_VERSION`: the specific experimental design identifier
+- `TOKEN_REQUIRED`: normally `1` in a real study
+- `ALLOCATION_EXPIRY_MINUTES`: normally `60`, or a documented study choice
+- `ALLOW_UNBALANCED_SETS`: normally `0`
+
+Optional:
+
+- `VIGNETTE_CONTENT_PATH`: defaults to `vignette_content`
+
+Railway assigns `PORT`; do not create it manually. Never commit the export key
+or database credentials to GitHub.
+
+
+5.4 Create the public app URL
+
+Railway services are not necessarily public immediately after deployment.
+
+1. Open the BLOCKS web service.
+2. Open Settings, then Networking or Public Networking.
+3. Select Generate Domain.
+4. Copy the generated HTTPS domain.
+
+Test admission with a new pseudonymous token:
+
+   https://YOUR_APP_DOMAIN/?token=online-test-001
+
+Inspect the deployment logs if the service does not start. Common causes are
+an unattached database, invalid question-battery columns, missing content, or
+unequal set sizes.
+
+
+6. Test the deployed application
+--------------------------------
+
+Use test tokens that are clearly separate from real participants.
+
+1. Complete one full respondent sequence.
+2. Start another sequence, submit one vignette, close it, and verify resume.
+3. Open another token without submitting a vignette to observe an allocated
+   record in the monitor.
+4. Confirm attention timing, answer-change count, and lifecycle fields in the
+   export.
+5. Confirm `APP_VERSION` and `DESIGN_VERSION` identify this deployment.
+
+Bearer export test:
+
+   curl -H "Authorization: Bearer YOUR_EXPORT_KEY" \
+     https://YOUR_APP_DOMAIN/export -o vignette_data.csv
+
+For a quick browser-only test, this also works:
+
+   https://YOUR_APP_DOMAIN/export?key=YOUR_EXPORT_KEY
+
+The query form exposes the key in browser history and possibly logs, so use the
+Bearer header for routine export.
+
+The CSV has one wide row per respondent and submitted vignette. Respondents who
+have not submitted any vignette do not appear in the response export. Partial
+respondents appear for the vignettes they submitted with status `started`.
+
+Validate the downloaded file:
+
+   Rscript scripts/03b_check_export_integrity.R vignette_data.csv
+
+
+7. Monitor PostgreSQL from R
+----------------------------
+
+Install the monitoring packages once:
+
+   install.packages(c("DBI", "RPostgres", "dplyr", "tibble"))
+
+Railway provides an internal/private database URL for services inside the
+project and an external public connection through its TCP proxy. A script on
+your own computer needs the public PostgreSQL URL, not the app's HTTPS URL.
+
+For the transparent script-based setup:
+
+1. Open `scripts/03a_monitor_database.R`.
+2. Replace:
+
+   database_url <- "YOUR_URL_HERE"
+
+3. Paste the public PostgreSQL URL from Railway.
+4. Run from the repository root:
+
+   Rscript scripts/03a_monitor_database.R
+
+The URL contains the database password. Restore `YOUR_URL_HERE` before any Git
+commit, push, screenshot, or public release.
+
+For a safer persistent setup, leave the placeholder in the script and put this
+in `~/.Renviron`:
+
+   DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require
+
+Restart R after editing `.Renviron`.
+
+The monitor is read-only. It reports status counts, set occupancy, response
+episodes, answer changes, attention results, and respondents who stopped at the
+attention gate. It does not remove or reclassify respondents.
+
+
+8. Understand dropout and quota behavior
+----------------------------------------
+
+The allocation quota counts `allocated`, `started`, and `completed` records.
+
+- A respondent who opens the app but never submits the first vignette remains
+  `allocated` initially.
+- After `ALLOCATION_EXPIRY_MINUTES` of inactivity, that unused allocation is
+  marked `abandoned` the next time a new respondent is allocated.
+- `Abandoned` records no longer count toward set quotas.
+- A respondent who submitted at least one vignette remains `started` after
+  dropout. Their saved responses remain available and they continue counting
+  toward the set quota.
+- The same token resumes the original assignment and first unanswered vignette.
+
+This distinction prevents people who never begin answering from permanently
+occupying quota while preserving scientifically useful partial-response data.
+
+
+9. Update and publish
+---------------------
+
+Before pushing a study update:
+
+1. Run `pytest -q`.
+2. Run the R workflow if design or text fragments changed.
+3. Inspect the two XLSX design outputs.
+4. Test the Excel question batteries locally.
+5. Confirm no real database URL or export key is present in tracked files.
+6. Update `APP_VERSION` or `DESIGN_VERSION` when the corresponding component
+   changes.
+7. Commit and push the intended deployment branch.
+8. Check Railway's deployment logs and run a new test token after deployment.
+
+Do not change design files or question batteries during live data collection
+without a documented version transition. Existing respondents retain their
+stored vignette assignment, while newly deployed content may otherwise change
+the meaning of later responses.
+
+
+10. Database reset
+------------------
+
+`scripts/03c_reset_database.R` permanently deletes participant, assignment, and
+response data. Use it only before a fresh collection run and only after a
+verified backup/export.
+
+The script requires all three safeguards:
+
+- `BLOCKS_ALLOW_DATABASE_RESET=YES`
+- An interactive R or RStudio session
+- The exact confirmation phrase shown by the script
+
+The monitoring script never performs this reset.

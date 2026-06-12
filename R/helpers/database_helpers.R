@@ -10,16 +10,22 @@ require_database_packages <- function() {
 }
 
 get_database_url <- function(database_url = NULL) {
-  if (is.null(database_url) || !nzchar(database_url)) {
-    database_url <- Sys.getenv("DATABASE_URL")
+  placeholders <- c(
+    "YOUR_URL_HERE",
+    "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+  )
+  supplied_placeholder <- !is.null(database_url) && database_url %in% placeholders
+  if (is.null(database_url) || !nzchar(database_url) || supplied_placeholder) {
+    environment_url <- Sys.getenv("DATABASE_URL")
+    if (nzchar(environment_url)) database_url <- environment_url
   }
-  if (!nzchar(database_url)) {
+  if (is.null(database_url) || !nzchar(database_url)) {
     stop(
       "No database URL is configured. Edit the database_url line near the top ",
       "of scripts/03a_monitor_database.R or set DATABASE_URL in .Renviron."
     )
   }
-  if (grepl("USER:PASSWORD@HOST:PORT/DATABASE", database_url, fixed = TRUE)) {
+  if (database_url %in% placeholders) {
     stop(
       "The database monitor still contains its placeholder URL. Replace the ",
       "database_url line near the top of scripts/03a_monitor_database.R with ",
