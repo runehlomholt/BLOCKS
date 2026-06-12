@@ -6,3 +6,9 @@ __pycache__/
 .venv/
 .env
 app.db
+
+# Obsolete outputs from the pre-structured R workflow
+R/generated_vignettes/
+R/full_factorial_design.RData
+R/vignette_sets_size_*.xlsx
+R/block_design_comparison.csv

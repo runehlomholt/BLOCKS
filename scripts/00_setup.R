@@ -30,11 +30,11 @@ path_scripts <- file.path(base_path, "scripts")
 path_config <- file.path(base_path, "config")
 path_R <- file.path(base_path, "R")
 path_helpers <- file.path(path_R, "helpers")
-path_design <- path_R
 path_text_fragments <- file.path(path_R, "text_fragments")
-path_generated_vignettes <- file.path(path_R, "generated_vignettes")
+path_outputs <- file.path(base_path, "outputs")
 path_app_vignettes <- file.path(base_path, "vignette_content")
-path_monitoring <- file.path(path_R, "Database monitoring after app deployement")
+
+dir.create(path_outputs, showWarnings = FALSE, recursive = TRUE)
 
 source(file.path(path_config, "workflow_config.R"))
 
@@ -44,9 +44,7 @@ workflow_paths <- list(
   path_config = path_config,
   path_R = path_R,
   path_helpers = path_helpers,
-  path_design = path_design,
   path_text_fragments = path_text_fragments,
-  path_generated_vignettes = path_generated_vignettes,
-  path_app_vignettes = path_app_vignettes,
-  path_monitoring = path_monitoring
+  path_outputs = path_outputs,
+  path_app_vignettes = path_app_vignettes
 )

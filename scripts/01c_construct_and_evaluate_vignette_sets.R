@@ -4,12 +4,14 @@
 # ==============================================================================
 
 source(file.path("scripts", "00_setup.R"))
-require_workflow_packages(c("AlgDesign", "openxlsx", "dplyr", "tibble", "readr"))
+require_workflow_packages(c(
+  "AlgDesign", "openxlsx", "dplyr", "tibble", "xml2", "zip"
+))
 print_study_design_summary <- FALSE
 source(file.path(path_scripts, "01a_define_study_design.R"))
 source(file.path(path_helpers, "design_helpers.R"))
 
-full_design_file <- file.path(path_design, "full_factorial_design.rds")
+full_design_file <- file.path(path_outputs, "full_factorial_design.rds")
 if (!file.exists(full_design_file)) {
   stop("Run scripts/01b_generate_factorial_design.R first.")
 }
@@ -38,16 +40,10 @@ cat("============================================================\n")
 print(comparison, width = Inf)
 
 blocked_design <- blocked_designs[[paste0("size", chosen_block_size)]]
-canonical_workbook <- file.path(path_design, "vignette_sets.xlsx")
-legacy_workbook <- file.path(
-  path_design,
-  paste0("vignette_sets_size_", chosen_block_size, ".xlsx")
-)
-saveRDS(blocked_design, file.path(path_design, "blocked_design.rds"))
-save_blocked_sets_to_excel(blocked_design, canonical_workbook)
-save_blocked_sets_to_excel(blocked_design, legacy_workbook)
-readr::write_csv(comparison, file.path(path_design, "block_design_comparison.csv"))
+canonical_workbook <- file.path(path_outputs, "vignette_sets.xlsx")
+saveRDS(blocked_design, file.path(path_outputs, "blocked_design.rds"))
+save_blocked_sets_to_excel(blocked_design, comparison, canonical_workbook)
 
-integrity <- check_blocked_design_integrity(full_design, canonical_workbook)
+integrity <- check_blocked_design_integrity(full_design, blocked_design)
 print_blocked_design_integrity(integrity)
 message("Chosen block size exported: ", chosen_block_size)

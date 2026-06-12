@@ -4,19 +4,23 @@
 # ==============================================================================
 
 source(file.path("scripts", "00_setup.R"))
-require_workflow_packages(c("openxlsx", "dplyr", "purrr", "tibble", "readr", "stringr"))
+require_workflow_packages(c("dplyr", "purrr", "tibble", "readr"))
 print_study_design_summary <- FALSE
 source(file.path(path_scripts, "01a_define_study_design.R"))
 source(file.path(path_helpers, "text_helpers.R"))
 
-full_design_file <- file.path(path_design, "full_factorial_design.rds")
-vignette_sets_file <- file.path(path_design, "vignette_sets.xlsx")
-if (!file.exists(full_design_file) || !file.exists(vignette_sets_file)) {
+full_design_file <- file.path(path_outputs, "full_factorial_design.rds")
+blocked_design_file <- file.path(path_outputs, "blocked_design.rds")
+if (!file.exists(full_design_file) || !file.exists(blocked_design_file)) {
   stop("Run scripts/01b and scripts/01c before generating vignette text.")
 }
 
 full_design <- readRDS(full_design_file)
-set_names <- openxlsx::getSheetNames(vignette_sets_file)
+blocked_design <- readRDS(blocked_design_file)
+vignette_sets <- blocked_design$Blocks
+if (!is.list(vignette_sets) || length(vignette_sets) == 0) {
+  stop("blocked_design.rds does not contain any vignette sets.")
+}
 header_file <- file.path(path_text_fragments, "header.txt")
 static_folder <- file.path(path_text_fragments, "static")
 header_text <- if (file.exists(header_file)) readr::read_file(header_file) else ""
@@ -50,16 +54,14 @@ resolve_fragment <- function(key, row) {
   match[[1]]
 }
 
-output_paths <- c(path_generated_vignettes, path_app_vignettes)
 if (isTRUE(workflow_config$clean_generated_vignettes)) {
-  for (output_path in output_paths) {
-    set_dirs <- Sys.glob(file.path(output_path, "Set_*"))
-    if (length(set_dirs) > 0) unlink(set_dirs, recursive = TRUE, force = TRUE)
-  }
+  set_dirs <- Sys.glob(file.path(path_app_vignettes, "Set_*"))
+  if (length(set_dirs) > 0) unlink(set_dirs, recursive = TRUE, force = TRUE)
 }
 
-for (set_name in set_names) {
-  set_data <- openxlsx::read.xlsx(vignette_sets_file, sheet = set_name)
+for (set_index in seq_along(vignette_sets)) {
+  set_name <- paste0("Set_", set_index)
+  set_data <- vignette_sets[[set_index]]
   if (!"id" %in% names(set_data)) stop("Missing id column in ", set_name)
 
   for (vignette_id in set_data$id) {
@@ -72,15 +74,13 @@ for (set_name in set_names) {
       row = row
     ))
 
-    for (output_path in output_paths) {
-      set_folder <- file.path(output_path, set_name)
-      dir.create(set_folder, showWarnings = FALSE, recursive = TRUE)
-      writeLines(text, file.path(set_folder, paste0("vignette_", vignette_id, ".txt")))
-    }
+    set_folder <- file.path(path_app_vignettes, set_name)
+    dir.create(set_folder, showWarnings = FALSE, recursive = TRUE)
+    writeLines(text, file.path(set_folder, paste0("vignette_", vignette_id, ".txt")))
   }
 }
 
 message(
-  "Generated ", length(set_names), " balanced vignette sets in:\n - ",
-  paste(output_paths, collapse = "\n - ")
+  "Generated ", length(vignette_sets), " balanced vignette sets in:\n - ",
+  path_app_vignettes
 )

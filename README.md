@@ -72,8 +72,18 @@ Rscript scripts/run_design_workflow.R
 The staged workflow separates configuration, factorial generation, blocked-set
 construction, and text generation. Edit factor levels, block sizes, seed, and
 merge order in `config/workflow_config.R`. Generated design artifacts are
-written to `R/`, while `R/generated_vignettes/` and the app's
-`vignette_content/` folder remain synchronized.
+written to `outputs/`. The application-ready text files are written directly
+to `vignette_content/`.
+
+The workflow keeps four canonical design artifacts:
+
+- `outputs/full_factorial_design.rds`: typed R object used by later stages
+- `outputs/blocked_design.rds`: typed R object containing the selected sets
+- `outputs/full_factorial_design.xlsx`: human-readable factorial design
+- `outputs/vignette_sets.xlsx`: human-readable sets and design evaluation
+
+RDS files are the machine-readable source of truth. Excel files are produced
+only for inspection and are not read by later workflow stages.
 
 Individual stages can also be run separately:
 
@@ -89,7 +99,7 @@ The vignette text generator:
 - Automatically creates folders such as:
 
 ```
-generated_vignettes/
+vignette_content/
   Set_1/
     vignette_12.txt
     vignette_47.txt
