@@ -22,8 +22,8 @@
 #--------------------------------------------------------------
 # 0. Settings
 #--------------------------------------------------------------
-CREATE_PLACEHOLDERS <- FALSE   # set TRUE only when setting up folders/files first time
-FAIL_ON_PLACEHOLDERS <- TRUE   # set FALSE if you don't want the script to stop on placeholder text
+CREATE_PLACEHOLDERS <- FALSE
+FAIL_ON_PLACEHOLDERS <- FALSE  # Placeholder content is intentional in this example repository
 
 #--------------------------------------------------------------
 # 1. Load packages
@@ -39,16 +39,30 @@ pacman::p_load(
 #--------------------------------------------------------------
 # 2. File paths
 #--------------------------------------------------------------
-base_path <- "YOURFILEPATH"
-setwd(base_path)
+script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+base_path <- if (length(script_arg) > 0) {
+  dirname(normalizePath(sub("^--file=", "", script_arg[[1]])))
+} else {
+  normalizePath("R", mustWork = TRUE)
+}
+repository_path <- dirname(base_path)
 
 full_design_file <- file.path(base_path, "full_factorial_design.RData")
-vignette_sets    <- file.path(base_path, "vignette_sets.xlsx")
+vignette_sets    <- file.path(base_path, "vignette_sets_size_4.xlsx")
 
 fragment_base_path <- file.path(base_path, "text_fragments")
-output_path        <- file.path(base_path, "generated_vignettes")
+output_paths <- c(
+  file.path(base_path, "generated_vignettes"),
+  file.path(repository_path, "vignette_content")
+)
 
-dir.create(output_path, showWarnings = FALSE, recursive = TRUE)
+for (output_path in output_paths) {
+  dir.create(output_path, showWarnings = FALSE, recursive = TRUE)
+  old_set_dirs <- Sys.glob(file.path(output_path, "Set_*"))
+  if (length(old_set_dirs) > 0) {
+    unlink(old_set_dirs, recursive = TRUE, force = TRUE)
+  }
+}
 
 #--------------------------------------------------------------
 # 3. Optional: scaffold folders + placeholder .txt files (SAFE)
@@ -259,10 +273,6 @@ construct_vignette_text <- function(row_data, merge_order) {
 # 12. Generate all vignette text files for each set
 #--------------------------------------------------------------
 for (set_name in set_names) {
-  
-  set_folder <- file.path(output_path, set_name)
-  dir.create(set_folder, showWarnings = FALSE, recursive = TRUE)
-  
   set_data <- openxlsx::read.xlsx(vignette_sets, sheet = set_name)
   
   if (!"id" %in% names(set_data)) {
@@ -280,13 +290,18 @@ for (set_name in set_names) {
     
     vignette_text <- construct_vignette_text(row_data, merge_order)
     
-    out_file <- file.path(set_folder, paste0("vignette_", vign_id, ".txt"))
-    writeLines(vignette_text, out_file)
+    for (output_path in output_paths) {
+      set_folder <- file.path(output_path, set_name)
+      dir.create(set_folder, showWarnings = FALSE, recursive = TRUE)
+      out_file <- file.path(set_folder, paste0("vignette_", vign_id, ".txt"))
+      writeLines(vignette_text, out_file)
+    }
   }
 }
 
 cat("\n-----------------------------------------\n")
 cat("Vignette text generation complete.\n")
-cat("Output folder: ", output_path, "\n")
+cat("Output folders:\n")
+cat(paste0(" - ", output_paths, collapse = "\n"), "\n")
 cat("-----------------------------------------\n")
 

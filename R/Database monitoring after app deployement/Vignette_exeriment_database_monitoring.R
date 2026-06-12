@@ -16,9 +16,10 @@
 # Respondent
 #   A unique row in the `respondents` table.
 #
-# Started experiment
-#   A respondent who appears at least once in `vignette_responses`
-#   (i.e., evaluated at least one vignette).
+# Participant lifecycle
+#   The `respondents.status` field records allocated, started, completed, or
+#   abandoned. Abandoned allocations remain available as recruitment paradata
+#   but are ignored by future quota allocation.
 #
 # Completed experiment
 #   A respondent who evaluated exactly the number of vignettes specified by
@@ -85,38 +86,6 @@ options(
   dplyr.print_max  = Inf
 )
 
-# -------------------------------
-# Database connection (via DATABASE_URL)
-# -------------------------------
-# This script expects the database connection details to be provided
-# via an environment variable called DATABASE_URL.
-#
-# Format (PostgreSQL):
-#   postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require
-#
-# Example:
-#   postgresql://myuser:mypassword@containers-us-west-42.railway.app:6543/railway
-#
-# How to set this:
-#
-# 1) Temporarily (recommended for interactive use in R / RStudio):
-#    Sys.setenv(
-#      DATABASE_URL = "postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require"
-#    )
-#
-# 2) Permanently (recommended for repeated use):
-#    - Add it to your .Renviron file, e.g.:
-#        DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require
-#
-# 3) On Railway:
-#    - This variable is already provided automatically.
-#
-# NOTE:
-# - Do NOT hard-code credentials directly into the script.
-# - Restart R after changing .Renviron for changes to take effect.
-#
-# -------------------------------
-
 parse_db_url <- function(url) {
   stopifnot(nzchar(url))
   
@@ -171,9 +140,7 @@ message("✔ Connected to PostgreSQL")
 # -------------------------------
 # Monitoring function
 # -------------------------------
-# REMEMBER TO SET THE NUMBER OF VIGNETTES PER SET HERE ACCORDING TO YOU DESIGN ##
-monitor_db <- function(con, vignettes_per_set = 4) {
-  stopifnot(is.numeric(vignettes_per_set), vignettes_per_set > 0)
+monitor_db <- function(con) {
   
   # 1) N unique respondents (Respondent.id is unique per row)
   n_unique_respondents <- dbGetQuery(con, "
@@ -193,33 +160,33 @@ monitor_db <- function(con, vignettes_per_set = 4) {
     ) d
   ")$n[[1]]
   
-  # 3) Started: appear in vignette_responses at least once
+  # 3) Lifecycle status counts
+  status_counts <- dbGetQuery(con, "
+    SELECT status, COUNT(*)::int AS n
+    FROM respondents
+    GROUP BY status
+    ORDER BY status
+  ") %>% as_tibble()
+
+  status_n <- function(name) {
+    value <- status_counts$n[status_counts$status == name]
+    if (length(value) == 0) 0L else value[[1]]
+  }
+
+  n_allocated <- status_n("allocated")
+  n_abandoned <- status_n("abandoned")
+
+  # Started includes both active starters and completed participants.
   n_started <- dbGetQuery(con, "
     SELECT COUNT(DISTINCT respondent_id)::int AS n
     FROM vignette_responses
   ")$n[[1]]
   
-  # 4) Completed experiment: exactly vignettes_per_set distinct vignette_order
-  n_completed_experiment <- dbGetQuery(con, glue("
-    SELECT COUNT(*)::int AS n
-    FROM (
-      SELECT respondent_id
-      FROM vignette_responses
-      GROUP BY respondent_id
-      HAVING COUNT(DISTINCT vignette_order) = {vignettes_per_set}
-    ) t
-  "))$n[[1]]
+  # 4) Completion is recorded by the application after the final assignment.
+  n_completed_experiment <- status_n("completed")
   
-  # 5) Dropped out: started, but fewer than vignettes_per_set distinct vignette_order
-  n_dropped_out <- dbGetQuery(con, glue("
-    SELECT COUNT(*)::int AS n
-    FROM (
-      SELECT respondent_id
-      FROM vignette_responses
-      GROUP BY respondent_id
-      HAVING COUNT(DISTINCT vignette_order) BETWEEN 1 AND {vignettes_per_set - 1}
-    ) t
-  "))$n[[1]]
+  # 5) Current partial starters. These may still resume later.
+  n_partial <- status_n("started")
   
   # 6) Judgements recorded (respondent × vignette_order × question_id)
   n_judgements <- dbGetQuery(con, "
@@ -242,19 +209,36 @@ monitor_db <- function(con, vignettes_per_set = 4) {
       END AS avg
     FROM vignette_responses
   ")$avg[[1]]
+
+  answer_change_stats <- dbGetQuery(con, "
+    WITH episodes AS (
+      SELECT respondent_id, vignette_order, MAX(answer_change_count)::int AS changes
+      FROM vignette_responses
+      GROUP BY respondent_id, vignette_order
+    )
+    SELECT
+      COUNT(*) FILTER (WHERE changes > 0)::int AS n_revised,
+      ROUND(AVG(changes), 2) AS avg_changes
+    FROM episodes
+  ") %>% as_tibble()
+
+  n_revised <- answer_change_stats$n_revised[[1]]
+  avg_answer_changes <- answer_change_stats$avg_changes[[1]]
   
   # 7) Attention check stats + fail percent among reached
   att_counts <- dbGetQuery(con, "
     SELECT
       SUM(CASE WHEN attention_completed = TRUE THEN 1 ELSE 0 END)::int AS n_reached,
       SUM(CASE WHEN attention_completed = TRUE AND COALESCE(attention_correct, FALSE) = TRUE THEN 1 ELSE 0 END)::int AS n_passed,
-      SUM(CASE WHEN attention_completed = TRUE AND COALESCE(attention_correct, FALSE) = FALSE THEN 1 ELSE 0 END)::int AS n_failed
+      SUM(CASE WHEN attention_completed = TRUE AND COALESCE(attention_correct, FALSE) = FALSE THEN 1 ELSE 0 END)::int AS n_failed,
+      ROUND(AVG(attention_latency_ms) FILTER (WHERE attention_latency_ms IS NOT NULL))::int AS avg_latency_ms
     FROM respondents
   ") %>% as_tibble()
   
   att_reached <- att_counts$n_reached[[1]]
   att_passed  <- att_counts$n_passed[[1]]
   att_failed  <- att_counts$n_failed[[1]]
+  att_avg_latency <- att_counts$avg_latency_ms[[1]]
   
   att_pass_rate <- if (!is.na(att_reached) && att_reached > 0) round(100 * att_passed / att_reached, 1) else NA_real_
   att_fail_rate <- if (!is.na(att_reached) && att_reached > 0) round(100 * att_failed / att_reached, 1) else NA_real_
@@ -262,7 +246,11 @@ monitor_db <- function(con, vignettes_per_set = 4) {
   # 8) Diagnostic: unique respondents per condition set
   respondents_by_set <- dbGetQuery(con, "
     SELECT condition_set,
-           COUNT(DISTINCT id)::int AS n_unique_respondents
+           COUNT(DISTINCT id)::int AS n_unique_respondents,
+           COUNT(*) FILTER (WHERE status = 'allocated')::int AS n_allocated,
+           COUNT(*) FILTER (WHERE status = 'started')::int AS n_started,
+           COUNT(*) FILTER (WHERE status = 'completed')::int AS n_completed,
+           COUNT(*) FILTER (WHERE status = 'abandoned')::int AS n_abandoned
     FROM respondents
     GROUP BY condition_set
     ORDER BY condition_set
@@ -270,7 +258,11 @@ monitor_db <- function(con, vignettes_per_set = 4) {
     as_tibble() %>%
     rename(
       `Vignette set` = condition_set,
-      `Unique respondents (N)` = n_unique_respondents
+      `Unique respondents (N)` = n_unique_respondents,
+      `Allocated` = n_allocated,
+      `Started` = n_started,
+      `Completed` = n_completed,
+      `Abandoned` = n_abandoned
     )
   
   # Summary tibble (compact + interpretive)
@@ -278,28 +270,38 @@ monitor_db <- function(con, vignettes_per_set = 4) {
     `Metric` = c(
       "N unique respondents (respondents.id)",
       "Duplicate respondent entries (same external_id; should be 0)",
+      "Currently allocated (not yet started)",
+      "Abandoned before first response",
       "Respondents who started (have any vignette response)",
-      "Completed experiment (evaluated all designed vignettes)",
-      "Dropped out (started but evaluated fewer than designed vignettes)",
+      "Currently partial (started but not completed)",
+      "Completed experiment",
       "Judgements recorded (respondent × vignette (order) × question)",
       "Average judgements per vignette evaluated",
+      "Vignette responses revised at least once",
+      "Average answer changes per vignette response",
       "Attention check reached",
       "Attention check passed",
       "Attention check failed",
-      "Attention check fail rate (%) among reached"
+      "Attention check fail rate (%) among reached",
+      "Average attention-check latency (ms)"
     ),
     `Value` = c(
       n_unique_respondents,
       n_duplicates,
+      n_allocated,
+      n_abandoned,
       n_started,
+      n_partial,
       n_completed_experiment,
-      n_dropped_out,
       n_judgements,
       avg_judgements_per_vignette,
+      n_revised,
+      avg_answer_changes,
       att_reached,
       att_passed,
       att_failed,
-      att_fail_rate
+      att_fail_rate,
+      att_avg_latency
     )
   )
   
@@ -310,10 +312,76 @@ monitor_db <- function(con, vignettes_per_set = 4) {
 # -------------------------------
 # Run + print
 # -------------------------------
-vignettes_per_set <- 4
-res <- monitor_db(con, vignettes_per_set)
+res <- monitor_db(con)
 
 print(res$summary)
 print(res$respondents_by_set)
 
+# Non-starters are retained as allocated or abandoned lifecycle records.
+# Do not delete them during data collection; their counts are reported above.
+
+
+
+## attention diagnostics ##
+attention_gate_diagnostic <- dbGetQuery(con, "
+WITH progress AS (
+  SELECT
+    r.id AS respondent_id,
+    r.external_id,
+    r.condition_set,
+    r.attention_order,
+    r.attention_completed,
+    r.attention_correct,
+    COUNT(DISTINCT vr.vignette_order)::int AS n_vignettes_completed,
+    MAX(vr.vignette_order)::int AS max_vignette_order
+  FROM respondents r
+  LEFT JOIN vignette_responses vr
+    ON vr.respondent_id = r.id
+  GROUP BY
+    r.id,
+    r.external_id,
+    r.condition_set,
+    r.attention_order,
+    r.attention_completed,
+    r.attention_correct
+)
+SELECT
+  CASE
+    WHEN n_vignettes_completed = 0 THEN
+      '00 no vignette submitted'
+
+    WHEN attention_order IS NULL THEN
+      '01 no attention plan'
+
+    WHEN attention_completed = TRUE THEN
+      '04 attention submitted'
+
+    WHEN n_vignettes_completed < attention_order THEN
+      '02 dropped before attention was due'
+
+    WHEN n_vignettes_completed = attention_order THEN
+      '03 stopped at scheduled attention gate'
+
+    WHEN n_vignettes_completed > attention_order
+         AND COALESCE(attention_completed, FALSE) = FALSE THEN
+      '99 inconsistent: passed gate without attention_completed'
+
+    ELSE
+      '98 other'
+  END AS attention_status,
+  COUNT(*)::int AS n
+FROM progress
+GROUP BY attention_status
+ORDER BY attention_status
+") %>% as_tibble()
+
+print(attention_gate_diagnostic)
+
+# # 6) Optional: rerun monitoring after cleanup
+res <- monitor_db(con)
+
+print(res$summary)
+print(res$respondents_by_set)
+
+#######
 dbDisconnect(con)  # optional

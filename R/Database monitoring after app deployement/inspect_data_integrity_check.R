@@ -43,6 +43,7 @@ required_vars <- c(
   "vignette",
   "vignette_order",
   "latency_ms",
+  "answer_change_count",
   "attention_order",
   "attention_completed",
   "attention_correct"
@@ -74,6 +75,20 @@ meta_vars <- c(
   "vignette_order",
   "latency_ms",
   "click_count",
+  "answer_change_count",
+  "status",
+  "allocated_at",
+  "participant_started_at",
+  "participant_completed_at",
+  "participant_abandoned_at",
+  "attention_presented_at",
+  "attention_submitted_at",
+  "attention_latency_ms",
+  "client_started_at",
+  "client_ended_at",
+  "server_received_at",
+  "design_version",
+  "app_version",
   "attention_order",
   "attention_completed",
   "attention_correct"
@@ -204,7 +219,8 @@ if ("click_count" %in% names(data_raw)) {
 # 11. Attention check consistency ----------------------------------------
 
 attention_summary <- data_raw %>%
-  distinct(internal_id, attention_order, attention_completed, attention_correct)
+  distinct(internal_id, attention_order, attention_completed, attention_correct,
+           attention_presented_at, attention_submitted_at, attention_latency_ms)
 
 register_check(
   "Attention check info present",
@@ -222,6 +238,15 @@ register_check(
 )
 
 # 12. Block randomisation sanity -----------------------------------------
+
+negative_answer_changes <- data_raw %>%
+  filter(answer_change_count < 0)
+
+register_check(
+  "Answer-change count valid",
+  nrow(negative_answer_changes) == 0,
+  paste(nrow(negative_answer_changes), "rows with negative counts")
+)
 
 block_counts <- data_raw %>%
   distinct(internal_id, block) %>%
@@ -255,14 +280,25 @@ analysis_data <- data_raw %>%
     internal_id,
     respondent_id,
     block,
+    any_of(c(
+      "status", "allocated_at", "participant_started_at",
+      "participant_completed_at", "participant_abandoned_at",
+      "design_version", "app_version"
+    )),
     vignette,
     vignette_order,
     all_of(item_vars),
+    any_of(c("client_started_at", "client_ended_at", "server_received_at")),
     latency_ms,
     any_of("click_count"),
+    answer_change_count,
     attention_order,
     attention_completed,
-    attention_correct
+    attention_correct,
+    any_of(c(
+      "attention_presented_at", "attention_submitted_at",
+      "attention_latency_ms"
+    ))
   )
 
 write_csv(analysis_data, "vignette_data_clean.csv")

@@ -48,20 +48,25 @@ General rules
 Typical structure (example)
 
 BLOCKS/
-├── vignettes/
-│   ├── set_1/
+├── vignette_content/
+│   ├── Set_1/
 │   │   ├── vignette_01.txt
 │   │   ├── vignette_02.txt
 │   │   └── vignette_03.txt
-│   ├── set_2/
+│   ├── Set_2/
 │   │   ├── vignette_01.txt
 │   │   └── vignette_02.txt
 │   └── ...
 ├── app files
 └── configuration files
 
-Note:
-The exact folder names (e.g. vignettes, set_1) should be checked against the README and existing examples in the repository.
+The included illustrative design can be regenerated from the repository root:
+
+Rscript R/Experiment_design.R
+Rscript R/Vignette_text_generator.R
+
+This creates 24 balanced sets containing four placeholder vignettes each and
+updates both R/generated_vignettes and vignette_content.
 
 Text file requirements
 	•	Each .txt file should contain one complete vignette.
@@ -78,7 +83,9 @@ https://railway.app
 	•	Authorise Railway to access your GitHub repositories.
 	4.	Select your forked BLOCKS repository from the list.
 	5.	Configure deployment:
-	•	In most cases, no advanced configuration is needed.
+	•	Add a strong, unique EXPORT_KEY environment variable in Railway.
+	•	Set DESIGN_VERSION and APP_VERSION so exported records identify the deployed experiment.
+	•	Railway supplies DATABASE_URL when PostgreSQL is attached.
 	•	Railway automatically assigns a PORT and builds the app.
 	6.	Click “Deploy”.
 
@@ -108,6 +115,8 @@ pip install -r requirements.txt
 	4.	Verify that:
 	•	Vignette text files load correctly
 	•	Vignettes appear as expected in the interface
+	•	Database migrations run with: alembic upgrade head
+	•	The export endpoint rejects requests without the configured EXPORT_KEY
 
 ⸻
 

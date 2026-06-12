@@ -42,8 +42,14 @@ pacman::p_load(
 # 2. User settings: paths and design choices
 #--------------------------------------------------------------
 
-# Set this to your project/output folder
-project_dir <- "path/to/project_folder"
+# Store generated design artifacts beside this script. This works when the
+# script is run from the repository root with `Rscript R/Experiment_design.R`.
+script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+project_dir <- if (length(script_arg) > 0) {
+  dirname(normalizePath(sub("^--file=", "", script_arg[[1]])))
+} else {
+  normalizePath("R", mustWork = TRUE)
+}
 
 # Create output folder if needed
 dir.create(project_dir, showWarnings = FALSE, recursive = TRUE)
@@ -53,26 +59,29 @@ file_path_xlsx  <- project_dir
 file_path_rdata <- project_dir
 
 # Number of levels for each factor
-# Example below:
-#   A = 3 levels
+# Illustrative BLOCKS example:
+#   A = 2 levels
 #   B = 2 levels
-#   C = 2 levels
-#   D = 4 levels
+#   C = 3 levels
+#   D = 2 levels
 #   E = 2 levels
 #   F = 2 levels
-levels_design <- c(3, 2, 2, 4, 2, 2)
+levels_design <- c(2, 2, 3, 2, 2, 2)
 
 # Factor names used in the design matrix
 factor_names <- c("A", "B", "C", "D", "E", "F")
 
 # Candidate block sizes to compare
-candidate_block_sizes <- c(2, 4, 6)
+candidate_block_sizes <- c(4)
 
 # Final selected block size for export
-chosen_size <- 6
+chosen_size <- 4
 
 # Number of repeated optimisation attempts used by AlgDesign
-n_repeats <- 2000
+n_repeats <- as.integer(Sys.getenv("BLOCK_OPTIMISATION_REPEATS", "200"))
+
+# Make the illustrative design reproducible across regenerations.
+set.seed(20260612)
 
 #--------------------------------------------------------------
 # 3. Generate full-factorial design
