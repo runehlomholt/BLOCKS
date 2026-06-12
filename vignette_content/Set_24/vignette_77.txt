@@ -1,25 +1,19 @@
-Header placeholder text.
+Example vignette text
 
-S1 – Klasseoplysninger (ret tekst)
+It is early in the morning, and Alex is getting ready for the day.
 
-[fx: Klassen består af 22 elever med forskellige forudsætninger.]
+Before beginning work, Alex decides to make a cup of coffee.
 
-S2 – Skolekontekst (ret tekst)
+The familiar morning routine feels calm and unhurried.
 
-[fx: Undervisningen foregår i en almindelig dansk folkeskole.]
+Alex chooses a rich, dark-roasted coffee.
 
-[A1 placeholder text]
+The coffee is poured into a large blue mug.
 
-[B1 placeholder text]
+Alex adds a small amount of milk to the coffee.
 
-[C2 placeholder text]
+Alex sits down at the kitchen table.
 
-S3 – Fag og lektionsramme (ret tekst)
+Soft music plays while the coffee cools slightly.
 
-[fx: Lektionen handler om danskfaglige kompetencer.]
-
-[D1 placeholder text]
-
-[E2 placeholder text]
-
-[F2 placeholder text]
+The first sip is still a little hot, so Alex waits before trying again.

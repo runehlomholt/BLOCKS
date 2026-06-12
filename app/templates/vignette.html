@@ -15,8 +15,8 @@
       />
     </div>
 
-    <div class="progress">
-      <div class="progress-bar">
+    <div class="progress" aria-label="Fremdrift">
+      <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ vignette.progress_percent }}">
         <div
           class="progress-bar-fill"
           style="width: {{ vignette.progress_percent }}%;"
@@ -32,7 +32,7 @@
        Instruction
   ========================== -->
   <h2 class="instruction">
-    Læs følgende situation grundigt igennem, også selvom du syntes du har læst den før
+    Læs den følgende situation grundigt, også selvom du synes, at du har læst den før.
   </h2>
 
   <!-- =========================
@@ -40,7 +40,11 @@
   ========================== -->
   <div class="vignette-box">
     <div class="vignette-text">
-      {% for paragraph in vignette.text.split('\n\n') if paragraph.strip() %}
+      {% set paragraphs = vignette.text.split('\n\n') %}
+      {% if paragraphs and paragraphs[0].strip() %}
+        <h3 class="vignette-title">{{ paragraphs[0].strip() }}</h3>
+      {% endif %}
+      {% for paragraph in paragraphs[1:] if paragraph.strip() %}
         <p>{{ paragraph.strip() }}</p>
       {% endfor %}
     </div>
@@ -77,8 +81,9 @@
                 <tr>
                   <th></th>
                   {% for label in scale_labels %}
-                    <th class="option">
-                      {{ label }}
+                    <th class="option" scope="col">
+                      <span class="scale-value">{{ scale_values[loop.index0] }}</span>
+                      <span class="scale-label">{{ label }}</span>
                     </th>
                   {% endfor %}
                 </tr>
@@ -92,13 +97,16 @@
                     </td>
 
                     {% for val in scale_values %}
-                      <td class="option">
-                        <input
-                          type="radio"
-                          name="battery_{{ q.question_id }}"
-                          value="{{ val }}"
-                          required
-                        >
+                      <td class="option" data-scale-label="{{ scale_labels[loop.index0] }}">
+                        <label class="option-label">
+                          <input
+                            type="radio"
+                            name="battery_{{ q.question_id }}"
+                            value="{{ val }}"
+                            aria-label="{{ q.question_text }}: {{ val }}{% if scale_labels[loop.index0] %}, {{ scale_labels[loop.index0] }}{% endif %}"
+                            required
+                          >
+                        </label>
                       </td>
                     {% endfor %}
                   </tr>
@@ -119,16 +127,16 @@
          Hidden metadata
     ========================== -->
     <input type="hidden" name="order" value="{{ order }}">
-    <input type="hidden" name="vignette_id" value="{{ vignette.id }}">
     <input type="hidden" name="started_at" value="{{ start_timestamp }}">
     <input type="hidden" name="ended_at" id="ended_at" value="">
     <input type="hidden" name="click_count" id="click_count" value="0">
+    <input type="hidden" name="answer_change_count" id="answer_change_count" value="0">
 
     <!-- =========================
          Navigation
     ========================== -->
     <div class="navigation">
-      <button type="submit" class="primary">
+      <button type="submit" class="primary" data-submitting-text="Gemmer...">
         Næste
       </button>
     </div>
@@ -139,14 +147,31 @@
 
 <script>
   let clickCount = 0;
+  let answerChangeCount = 0;
+  const selectedAnswers = new Map();
+  const form = document.querySelector("form");
 
   document.addEventListener("click", function () {
     clickCount += 1;
     document.getElementById("click_count").value = clickCount;
   });
 
-  document.querySelector("form").addEventListener("submit", function () {
+  form.querySelectorAll('input[type="radio"]').forEach(function (input) {
+    input.addEventListener("change", function () {
+      const previous = selectedAnswers.get(input.name);
+      if (previous !== undefined && previous !== input.value) {
+        answerChangeCount += 1;
+        document.getElementById("answer_change_count").value = answerChangeCount;
+      }
+      selectedAnswers.set(input.name, input.value);
+    });
+  });
+
+  form.addEventListener("submit", function () {
     document.getElementById("ended_at").value = new Date().toISOString();
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = button.dataset.submittingText;
   });
 </script>
 

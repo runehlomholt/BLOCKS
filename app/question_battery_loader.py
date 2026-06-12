@@ -1,31 +1,20 @@
+from __future__ import annotations
+
 from pathlib import Path
+import logging
 import pandas as pd
 
+logger = logging.getLogger(__name__)
 
 def load_question_batteries(base_path: str | Path) -> list[dict]:
     base = Path(base_path)
     batteries: list[dict] = []
 
     if not base.exists():
-        print("❌ Battery base path does not exist:", base)
+        logger.warning("Battery base path does not exist: %s", base)
         return batteries
 
-    print("📂 Loading question batteries from:", base.resolve())
-    print("📂 Folder contents:", [p.name for p in base.iterdir()])
-
     for xlsx in sorted(base.glob("*.xlsx")):
-
-        # 🔍 DIAGNOSTIC — ADD THIS BLOCK
-        print("\n📄 Found Excel file:", xlsx.name)
-        print("🔎 xlsx.stem =", repr(xlsx.stem))
-        expected_heading = f"{xlsx.stem}_heading.txt"
-        print("🔎 Expecting heading file:", expected_heading)
-        print(
-            "🔎 Heading exists:",
-            (base / expected_heading).exists()
-        )
-        # 🔍 END DIAGNOSTIC
-
         df = pd.read_excel(xlsx).dropna(how="all")
         if df.empty:
             continue
@@ -42,7 +31,13 @@ def load_question_batteries(base_path: str | Path) -> list[dict]:
         # ------------------
         # Scale
         # ------------------
-        required_cols = {"scale_min", "scale_max", "scale_labels"}
+        required_cols = {
+            "question_id",
+            "question_text",
+            "scale_min",
+            "scale_max",
+            "scale_labels",
+        }
         missing = required_cols - set(df.columns)
         if missing:
             raise ValueError(
