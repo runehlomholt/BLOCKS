@@ -24,7 +24,7 @@ abstract: >
   Excel workbooks.
 
 repository-code: "https://github.com/runehlomholt/BLOCKS"
-doi: "10.5281/zenodo.19106987"
+doi: "10.5281/zenodo.20671911"
 
 license: MIT
 
@@ -44,5 +44,5 @@ preferred-citation:
   title: "BLOCKS: an application for administering blocked, text-based factorial vignette studies"
   year: 2026
   version: 2.0.0
-  doi: "10.5281/zenodo.19106987"
+  doi: "10.5281/zenodo.20671911"
   repository-code: "https://github.com/runehlomholt/BLOCKS"
