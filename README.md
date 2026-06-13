@@ -1,64 +1,97 @@
 # BLOCKS - Blocked Vignette Designs for Case Studies
 
-**Design, deploy, and run blocked vignette experiments with transparent allocation and researcher-controlled data.**
+**Design, deploy, and run blocked vignette experiments without consultancy fees.**
 
-BLOCKS is a free, open-source FastAPI application for blocked vignette experiments. It combines an R design workflow, file-based vignette and question configuration, PostgreSQL data storage, protected CSV export, and R monitoring tools.
+BLOCKS is a free, open-source web application for researchers who want to conduct blocked vignette experiments with control over design, randomisation, data storage, and study flow.
 
-The application does not require names, email addresses, or other directly identifying fields. Data protection compliance still depends on the study protocol, token design, hosting configuration, retention policy, participant information, and applicable law.
+Respondents enter through a personal study link, are assigned to a balanced vignette set, answer one vignette at a time, and can return to an unfinished session using the same link. The researcher defines the experimental design in R, writes the vignette content, configures question batteries in Excel, and receives analysis-ready data from PostgreSQL.
 
-## Core functionality
+The app is designed for researchers, not software companies:
 
-- Allocates new respondents to one of the currently least-filled vignette sets
-- Randomly chooses between tied least-filled sets under a database lock
-- Randomises and permanently stores vignette order within the assigned set
-- Resumes returning respondents from the first unanswered vignette when they use the same token
-- Loads vignette text from `vignette_content/`
-- Loads outcome items and response scales from structured Excel files in `question_batteries/`
-- Validates sequence, required answers, question IDs, and response values on the server
-- Presents one randomly positioned arithmetic attention check when a set has at least three vignettes
-- Saves each vignette when the respondent selects `Next`; the final submission marks the respondent completed
-- Records response latency, clicks, answer changes, lifecycle timestamps, attention-check timing, and version metadata
-- Provides a protected wide CSV export and read-only R database monitoring
+- No licence or per-respondent fees
+- No black-box allocation or randomisation
+- No required storage outside infrastructure you control
+- No requirement to collect names or email addresses
+- Transparent and auditable study logic
 
-## Improvements in the current version
+## The respondent flow
 
-Compared with the original single-file application, the current version adds:
+### 1. Entering the study
 
-- A modular `app/` structure separating routes, services, configuration, database models, and experiment loading
-- Persistent participant lifecycle states: `allocated`, `started`, `completed`, and `abandoned`
-- Resumable participation and server-enforced vignette order
-- Concurrency-safe, quota-balanced allocation
-- Expiry of unused allocations so respondents who never submit a vignette do not permanently occupy a set quota
-- Server-side submission validation and duplicate-submission protection
-- Attention-check presentation time, submission time, latency, and correctness
-- Per-vignette answer-change counts in addition to latency and click counts
-- Alembic database migrations, automated tests, and a protected export endpoint
-- A staged R workflow with typed RDS machine inputs and XLSX inspection copies
-- A responsive interface with clearer progress, accessible controls, horizontal scale scrolling, and guarded submission buttons
+The respondent follows a link containing a study token:
 
-## Respondent flow
+```text
+https://YOUR_APP_DOMAIN/?token=RESPONDENT_ID
+```
 
-1. A respondent opens `https://YOUR_APP_DOMAIN/?token=RESPONDENT_ID`.
-2. A new token is assigned to a least-filled vignette set. Its vignette order is shuffled once and stored.
-3. The respondent reads a vignette and answers every configured outcome item.
-4. Selecting `Next` validates and stores that vignette's complete response episode.
-5. An attention check appears at its preassigned point in the sequence.
-6. The respondent continues until the final vignette is submitted. Completion is automatic; there is no separate data-saving action on the finished page.
-7. Reopening the original token resumes at the first vignette that has not been submitted.
+For a new token, BLOCKS assigns the respondent to one of the vignette sets with the fewest participants. If several sets are equally available, the app chooses randomly between them. This keeps allocation balanced, including when several respondents enter at nearly the same time.
 
-Answers selected on the currently displayed page are not stored until `Next` is selected. Responses submitted on earlier pages remain stored if the respondent leaves.
+The vignette order is shuffled once for that respondent and then stored. The respondent therefore keeps the same set and order throughout the study.
 
-## Scientific data flow
+### 2. Answering the vignettes
 
-1. Define factors, factor levels, block size, seed, and text merge order in `config/workflow_config.R`.
-2. Generate the factorial design and selected vignette sets with the numbered R scripts.
-3. Inspect the XLSX outputs and retain the RDS files as the typed machine-readable source of truth.
-4. Generate application-ready vignette text under `vignette_content/`.
-5. Define outcome variables and scales in structured Excel workbooks under `question_batteries/`.
-6. Deploy a versioned app and collect responses in PostgreSQL.
-7. Monitor collection without modifying the database, export the protected CSV, and run the integrity checker.
+The respondent sees one vignette at a time, followed by the question batteries configured for the study. All required questions must be answered before the respondent can continue.
 
-## R design workflow
+When `Next` is selected, the app validates and stores the complete response to that vignette. Earlier submitted pages remain saved if the respondent closes the browser. Answers selected on the page currently being viewed are not stored until `Next` is selected.
+
+For each submitted vignette, the app can record:
+
+- Responses to all configured questions
+- Vignette order and assigned set
+- Response latency
+- Click count
+- Number of times selected answers were changed
+- Presentation, submission, and server timestamps
+- App and experimental-design versions
+
+### 3. Attention check
+
+One easy arithmetic attention check is placed at a random point in the sequence when a set contains at least three vignettes. Its position is determined for the respondent in advance.
+
+The app records whether it was completed correctly as well as its presentation time, submission time, and response latency.
+
+### 4. Leaving and returning
+
+If a respondent leaves after submitting at least one vignette, opening the original link again resumes the study at the first unanswered vignette. Previously submitted responses and the original randomised order are retained.
+
+If someone enters but never submits a vignette, the unused allocation can expire after a configurable period. It then stops occupying a set quota. A respondent who later returns with that same token can still reactivate the original assignment.
+
+### 5. Completing the study
+
+Submitting the final vignette marks the respondent as completed. There is no separate save action on the finished page.
+
+The app distinguishes between respondents who are:
+
+- `allocated`: assigned, but have not submitted a vignette
+- `started`: have submitted at least one vignette
+- `completed`: have submitted the final vignette
+- `abandoned`: had an unused allocation expire before beginning
+
+This makes it possible to monitor recruitment, dropout, set balance, and completed participation separately.
+
+## What the app does
+
+- Assigns respondents to quota-balanced vignette sets
+- Randomises and stores vignette order within each set
+- Presents text-based vignettes with flexible question batteries
+- Validates required answers and permitted scale values
+- Supports returning respondents and partial participation
+- Presents and records an arithmetic attention check
+- Records response timing and interaction paradata
+- Stores responses in PostgreSQL
+- Provides protected, analysis-ready CSV export
+- Supports read-only monitoring and data-integrity checks in R
+- Integrates with external survey platforms through respondent tokens
+
+## Typical research workflow
+
+### Step 1: Design the experiment in R
+
+Define factors, levels, block size, random seed, and text order in:
+
+```text
+config/workflow_config.R
+```
 
 Run the complete example workflow from the repository root:
 
@@ -66,26 +99,27 @@ Run the complete example workflow from the repository root:
 Rscript scripts/run_design_workflow.R
 ```
 
-The committed example contains 96 variations of a short morning-coffee story, arranged into 24 balanced sets of four. It is illustrative rather than substantively meaningful.
+The included scripts:
 
-The numbered stages are:
+- Generate a full factorial design
+- Construct blocked vignette sets
+- Evaluate balance, confounding, and efficiency
+- Generate application-ready vignette texts
 
-- `scripts/00_setup.R`: shared paths and package checks
-- `scripts/01a_define_study_design.R`: study-design definition
-- `scripts/01b_generate_factorial_design.R`: full factorial generation
-- `scripts/01c_construct_and_evaluate_vignette_sets.R`: set construction and evaluation
-- `scripts/02a_generate_vignette_texts.R`: application text generation
+The main outputs are typed RDS files used by later scripts and XLSX copies for human inspection:
 
-Study settings are centralised in `config/workflow_config.R`. The workflow writes four canonical design artifacts:
+```text
+outputs/full_factorial_design.rds
+outputs/blocked_design.rds
+outputs/full_factorial_design.xlsx
+outputs/vignette_sets.xlsx
+```
 
-- `outputs/full_factorial_design.rds`: typed factorial design used by later R stages
-- `outputs/blocked_design.rds`: typed selected vignette sets used by text generation
-- `outputs/full_factorial_design.xlsx`: human-readable factorial inspection copy
-- `outputs/vignette_sets.xlsx`: human-readable set and evaluation copy
+The committed example contains 96 variations of a short morning-coffee story arranged into 24 balanced sets of four. It demonstrates the workflow rather than a substantively meaningful experiment.
 
-The RDS files are machine inputs. XLSX outputs are for human inspection and are not used as intermediate workflow inputs.
+### Step 2: Generate vignette texts
 
-Generated application content has this structure:
+The text generator combines static passages and factor-level fragments in a researcher-defined order. It creates the folder structure expected by the app:
 
 ```text
 vignette_content/
@@ -97,155 +131,119 @@ vignette_content/
     vignette_88.txt
 ```
 
-Each set folder is one allocation block. Balanced set sizes are enforced at startup unless `ALLOW_UNBALANCED_SETS=1` is deliberately configured.
+Each folder represents one block or vignette set. The app reads the available folders and files automatically, so another study can use a different number of sets and vignettes without changing the application code.
 
-## Structured question batteries
+Balanced set sizes are checked when the app starts. Unequal set sizes can be allowed deliberately with `ALLOW_UNBALANCED_SETS=1`.
 
-Outcome variables and response scales remain defined in Excel. Place one or more `.xlsx` workbooks in `question_batteries/`. Each workbook must contain these columns:
+### Step 3: Add question batteries
+
+Questions and response scales are defined in one or more `.xlsx` files in `question_batteries/`. This supports multiple batteries and multiple outcome items per vignette.
+
+Each workbook contains:
 
 | Column | Meaning |
 | --- | --- |
-| `question_id` | Stable item name used as the CSV column name; it must be unique across all workbooks |
+| `question_id` | Unique, stable item name used as the CSV column name |
 | `question_text` | Text displayed to respondents |
-| `scale_min` | Lowest permitted integer response value |
-| `scale_max` | Highest permitted integer response value |
-| `scale_labels` | Semicolon-separated labels for every value from minimum to maximum |
+| `scale_min` | Lowest permitted integer response |
+| `scale_max` | Highest permitted integer response |
+| `scale_labels` | Semicolon-separated label for each scale value |
 
-The first data row defines the shared response scale for that workbook. The number of labels must equal `scale_max - scale_min + 1`. For example, a 1-5 scale requires five semicolon-separated labels. All items in one workbook share that scale.
+All items in one workbook share the response scale defined by its first data row. For example, a 1-5 scale requires five labels.
 
-To provide a display heading, add a text file with the same stem and `_heading.txt`, for example:
+An optional heading can be added with a text file sharing the workbook name:
 
 ```text
 question_batteries/Battery_1_example.xlsx
 question_batteries/Battery_1_example_heading.txt
 ```
 
-If the heading file is absent, the workbook filename is converted into a title. The app refuses invalid or incomplete answer values even if a request bypasses the browser interface.
+The application checks question IDs, scale definitions, required answers, and submitted values. Invalid or incomplete responses are rejected even if someone bypasses the browser interface.
 
-## Allocation, dropout, and quotas
+### Step 4: Deploy the app
 
-The quota count includes respondents with status `allocated`, `started`, or `completed`.
+The app can be deployed with GitHub for source control and Railway for application hosting and PostgreSQL. See `Installation guide.txt` for local setup, database attachment, environment variables, public networking, testing, export, and monitoring.
 
-- `allocated`: a set has been reserved, but no vignette has been submitted
-- `started`: at least one vignette has been submitted, but the sequence is incomplete
-- `completed`: the final vignette has been submitted
-- `abandoned`: an unused allocation expired before the first vignette submission
+Railway products and prices can change, so consult its current documentation before selecting a production setup.
 
-Unused `allocated` records become eligible for abandonment after `ALLOCATION_EXPIRY_MINUTES` of inactivity. Expiry is applied when a later new participant is allocated. `Abandoned` records are excluded from quota counts, so people who never begin answering do not permanently fill a block.
+### Step 5: Invite respondents
 
-Respondents who have submitted at least one vignette remain `started` if they drop out. Their submitted responses are retained and they continue to count in the quota. The current application does not automatically expire partial responders.
+BLOCKS can be used on its own or as one part of a larger survey. A common setup is:
 
-Using the same token reopens the same assignment. An abandoned token is reactivated and resumes its original assignment.
+1. Collect background or sensitive variables in an approved survey platform.
+2. Generate or pass a pseudonymous respondent token.
+3. Redirect the respondent to `https://YOUR_APP_DOMAIN/?token=RESPONDENT_ID`.
+4. Merge the datasets later using the controlled linkage key.
 
-## Export and paradata
+Sensitive information does not need to enter the vignette application.
 
-Set a strong `EXPORT_KEY`. The protected export endpoint is:
+### Step 6: Monitor and export data
 
-```text
-https://YOUR_APP_DOMAIN/export
-```
+The read-only script `scripts/03a_monitor_database.R` reports:
 
-Bearer authentication is preferred:
+- Respondent lifecycle counts
+- Occupancy of each vignette set
+- Submitted vignette episodes
+- Answer changes and response latency
+- Attention-check results and diagnostics
+
+It does not alter respondent records. The script can use Railway's public PostgreSQL URL directly or read `DATABASE_URL` from `~/.Renviron`. A database URL contains a password and must not be committed or shared.
+
+Set a strong `EXPORT_KEY` to enable the protected CSV export:
 
 ```bash
 curl -H "Authorization: Bearer YOUR_EXPORT_KEY" \
   https://YOUR_APP_DOMAIN/export -o vignette_data.csv
 ```
 
-For quick browser testing, `https://YOUR_APP_DOMAIN/export?key=YOUR_EXPORT_KEY` is also supported. A real key must never be committed to GitHub or shared in screenshots.
+The export contains one row per respondent and submitted vignette, with question responses in separate columns. Partial respondents are included for the vignettes they submitted. Respondents who never submitted a vignette are absent because they have no response episode.
 
-The export is a wide episode-level CSV: one row per respondent and submitted vignette, with each `question_id` as a response column. It includes:
-
-- Internal UUID and external respondent token
-- Assigned block, vignette ID, and vignette order
-- Participant status and lifecycle timestamps
-- Design and application versions
-- Client presentation and submission timestamps
-- Server receipt timestamp and calculated vignette latency
-- Click count and answer-change count
-- Attention position, completion, correctness, timestamps, and latency
-
-Respondents with no submitted vignette are absent from this response export because they have no response episode. Partial respondents are included for the vignettes they submitted and retain status `started`.
-
-Answer-change count records how often a participant revised a selected answer before submitting a vignette. It may indicate reconsideration but is not, by itself, a validated measure of insecurity.
-
-Validate a downloaded export with:
+Check a downloaded file with:
 
 ```bash
 Rscript scripts/03b_check_export_integrity.R vignette_data.csv
 ```
 
-The checker verifies required columns, episode uniqueness, valid statuses, non-negative latency and answer-change values, and complete item responses. It writes a `_checked.csv` copy when all checks pass.
-
-## Database monitoring
-
-`scripts/03a_monitor_database.R` is read-only. It reports lifecycle counts, set occupancy, submitted vignette episodes, answer revisions, attention-check results, and attention-gate diagnostics. It does not remove, abandon, or otherwise update respondents.
-
-For a transparent local setup, replace the line near the top of the script:
-
-```r
-database_url <- "YOUR_URL_HERE"
-```
-
-with Railway's public PostgreSQL URL, then run:
-
-```bash
-Rscript scripts/03a_monitor_database.R
-```
-
-The public database URL is different from the app's public web URL. In Railway, obtain it from the PostgreSQL service's external connection/TCP proxy information. It contains a database password. Restore the placeholder before committing or publishing the branch.
-
-For a safer persistent setup, leave the placeholder and set `DATABASE_URL` in `~/.Renviron`; database helpers use the environment variable when no URL is supplied.
-
-The destructive reset utility is separate: `scripts/03c_reset_database.R`. It requires `BLOCKS_ALLOW_DATABASE_RESET=YES`, an interactive R session, and the exact confirmation phrase before participant data can be erased.
-
-## Configuration
-
-The application reads these environment variables:
-
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection; local development falls back to `sqlite:///./app.db` | local SQLite |
-| `EXPORT_KEY` | Secret required for `/export`; export is disabled when empty | empty |
-| `TOKEN_REQUIRED` | Require `?token=...` to enter the study | `1` |
-| `ALLOCATION_EXPIRY_MINUTES` | Inactivity period before an unused allocation may be abandoned | `60` |
-| `APP_VERSION` | Application version stored with each participant | `development` |
-| `DESIGN_VERSION` | Experimental design version stored with each participant | `unspecified` |
-| `VIGNETTE_CONTENT_PATH` | Vignette set directory | `vignette_content` |
-| `ALLOW_UNBALANCED_SETS` | Allow unequal numbers of vignettes across sets | `0` |
-
-Database changes are versioned with Alembic:
-
-```bash
-alembic upgrade head
-```
-
-The Railway `Procfile` runs migrations before starting Uvicorn. Application startup also verifies that vignette content and question batteries can be loaded.
-
-## Installation and deployment
-
-See `Installation guide.txt` for local setup, Railway PostgreSQL attachment, branch selection, environment variables, public networking, online testing, export, and monitoring.
-
-Railway pricing and product steps can change. Check Railway's current documentation and pricing before choosing a production hosting plan.
+The checker verifies required columns, unique response episodes, valid participant states, valid timing and answer-change values, and complete item responses.
 
 ## Privacy and data protection
 
-The application database stores an internal UUID, the external token, the browser user-agent string, participant lifecycle metadata, responses, interaction paradata, and version fields. It does not require names, email addresses, or a dedicated IP-address field.
+BLOCKS is intentionally limited in the data it requires. The application stores:
 
-Hosting providers and reverse proxies may keep network and access logs independently of this application. External tokens can also become identifying if they contain personal information or can be linked to another dataset. Use pseudonymous random tokens, restrict database and export access, define retention rules, and document the setup in the study's ethics and data-management materials.
+- An internally generated respondent UUID
+- The external token supplied through the study link
+- Assigned set and randomised vignette order
+- Responses, timing, clicks, and answer changes
+- Attention-check results and timing
+- Participant lifecycle and version metadata
+- The browser user-agent string
 
-A common integration pattern is:
+It does not require names, email addresses, or a dedicated IP-address field.
 
-1. Collect identifying or sensitive variables in an approved survey platform.
-2. Generate or pass a pseudonymous respondent token.
-3. Redirect to `https://YOUR_APP_DOMAIN/?token=RESPONDENT_ID`.
-4. Merge datasets later using the controlled linkage key.
+This alone does not make a study GDPR-compliant. Hosting providers and reverse proxies may retain access logs, and an external token may be identifying if it contains personal information or can be linked to another dataset. Use pseudonymous random tokens, restrict database and export access, define retention rules, and document the setup in the study's ethics and data-management materials.
 
-The researcher or institution remains responsible for legal compliance, ethical approval, participant information, security, and appropriate use.
+The researcher or institution remains responsible for data protection compliance, ethical approval, participant information, security, and appropriate use.
+
+## Configuration
+
+The most important environment variables are:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `DATABASE_URL` | PostgreSQL connection; local development uses SQLite if omitted | local SQLite |
+| `EXPORT_KEY` | Secret required for `/export`; export is disabled when empty | empty |
+| `TOKEN_REQUIRED` | Require a token to enter the study | `1` |
+| `ALLOCATION_EXPIRY_MINUTES` | Time before an unused allocation may expire | `60` |
+| `APP_VERSION` | Application version saved with each respondent | `development` |
+| `DESIGN_VERSION` | Experimental-design version saved with each respondent | `unspecified` |
+| `VIGNETTE_CONTENT_PATH` | Location of vignette-set folders | `vignette_content` |
+| `ALLOW_UNBALANCED_SETS` | Permit different numbers of vignettes across sets | `0` |
+
+Database changes are versioned with Alembic. The Railway `Procfile` applies migrations before starting the app, and startup checks that vignette content and question batteries are valid.
 
 ## Tests
 
-Install development dependencies and run:
+Install the development dependencies and run:
 
 ```bash
 pip install -r requirements-dev.txt
@@ -254,12 +252,11 @@ pytest -q
 
 ## License and citation
 
-BLOCKS is released under the MIT License and may be used, adapted, and extended.
+BLOCKS is released under the MIT License and is free to use, adapt, and extend.
 
 To cite this exact release:
 
-Lomholt, R. (2026). BLOCKS ... (Version 2.0.0).
-Zenodo. https://doi.org/10.5281/zenodo.20671911
+Lomholt, R. (2026). BLOCKS ... (Version 2.0.0). Zenodo. https://doi.org/10.5281/zenodo.20671911
 
 For the latest version of BLOCKS:
 
