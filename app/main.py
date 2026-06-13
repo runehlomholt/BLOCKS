@@ -39,7 +39,10 @@ async def lifespan(app):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="BLOCKS: an application for administering blocked, text-based factorial vignette studies",
+    lifespan=lifespan,
+)
 templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(participants.router)

@@ -1,5 +1,8 @@
-BLOCKS - Installation and Deployment Guide
-==========================================
+BLOCKS: an application for administering blocked, text-based factorial vignette studies
+=======================================================================================
+
+Installation and Deployment Guide
+=================================
 
 This guide covers preparing an experiment, testing it locally, deploying it on
 Railway, connecting PostgreSQL, testing export, and monitoring data collection.
