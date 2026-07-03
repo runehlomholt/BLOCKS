@@ -256,7 +256,7 @@ BLOCKS is released under the MIT License and is free to use, adapt, and extend.
 
 To cite this exact release:
 
-Lomholt, R. (2026). *BLOCKS: an application for administering blocked, text-based factorial vignette studies* (Version 2.0.0). Zenodo. https://doi.org/10.5281/zenodo.20671911
+Lomholt, R. (2026). *BLOCKS: an application for administering blocked, text-based factorial vignette studies* (Version 2.0.1). Zenodo. https://doi.org/10.5281/zenodo.21178557
 
 For the latest version of BLOCKS:
 
