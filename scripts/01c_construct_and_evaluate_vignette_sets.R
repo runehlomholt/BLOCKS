@@ -18,32 +18,51 @@ if (!file.exists(full_design_file)) {
 full_design <- readRDS(full_design_file)
 set.seed(design_seed)
 
-blocked_designs <- list()
-comparison <- lapply(block_sizes, function(set_size) {
-  n_sets <- nrow(full_design) / set_size
-  blocked <- AlgDesign::optBlock(
-    frml = model_formula,
-    withinData = full_design,
-    blocksizes = rep(set_size, n_sets),
-    criterion = "D",
-    nRepeats = optblock_repeats,
-    center = FALSE
-  )
-  blocked_designs[[paste0("size", set_size)]] <<- blocked
-  evaluate_block_design(blocked, set_size, model_formula)
-})
-comparison <- dplyr::bind_rows(comparison)
+if (nrow(full_design) %% chosen_block_size != 0) {
+  stop("chosen_block_size must divide the full design exactly.")
+}
 
-cat("\n============================================================\n")
-cat("CANDIDATE BLOCKED-DESIGN COMPARISON\n")
-cat("============================================================\n")
-print(comparison, width = Inf)
+n_sets <- nrow(full_design) / chosen_block_size
+blocked_design <- AlgDesign::optBlock(
+  frml = model_formula,
+  withinData = full_design,
+  blocksizes = rep(chosen_block_size, n_sets),
+  criterion = "D",
+  nRepeats = optblock_repeats,
+  center = FALSE
+)
 
-blocked_design <- blocked_designs[[paste0("size", chosen_block_size)]]
+algdesign_evaluation <- evaluate_algdesign_block_design(
+  blocked_design = blocked_design,
+  set_size = chosen_block_size,
+  formula = model_formula,
+  confounding = TRUE,
+  center = FALSE
+)
+algdesign_evaluation <- label_algdesign_confounding_matrix(algdesign_evaluation)
+selected_evaluation <- evaluate_block_summary(
+  blocked_design = blocked_design,
+  set_size = chosen_block_size,
+  formula = model_formula,
+  algdesign_evaluation = algdesign_evaluation
+)
+
+print_selected_block_design_evaluation(selected_evaluation)
+print_algdesign_block_evaluation(
+  evaluation = algdesign_evaluation,
+  set_size = chosen_block_size,
+  n_sets = length(blocked_design$Blocks)
+)
+
 canonical_workbook <- file.path(path_outputs, "vignette_sets.xlsx")
 saveRDS(blocked_design, file.path(path_outputs, "blocked_design.rds"))
-save_blocked_sets_to_excel(blocked_design, comparison, canonical_workbook)
+save_blocked_sets_to_excel(blocked_design, selected_evaluation, canonical_workbook)
 
 integrity <- check_blocked_design_integrity(full_design, blocked_design)
 print_blocked_design_integrity(integrity)
-message("Chosen block size exported: ", chosen_block_size)
+workbook_integrity <- check_vignette_set_workbook_integrity(
+  full_design,
+  canonical_workbook
+)
+print_vignette_set_workbook_integrity(workbook_integrity)
+message("Selected blocked-design evaluation complete. Chosen block size: ", chosen_block_size)
