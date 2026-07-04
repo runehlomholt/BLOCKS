@@ -1,7 +1,7 @@
 cff-version: 1.2.1
 message: "If you use this software in your research, please cite it as below."
 
-title: "BLOCKS: an application for administering blocked, text-based factorial vignette studies"
+title: "BLOCKS: An adaptable application for administering blocked, text-based vignette experiments"
 type: software
 version: 2.0.1
 
@@ -30,9 +30,8 @@ license: MIT
 
 keywords:
   - vignette experiments
-  - blocked designs
+  - factorial designs
   - experimental methods
-  - educational research
   - research infrastructure
   - open source
 
@@ -41,7 +40,7 @@ preferred-citation:
   authors:
     - family-names: Lomholt
       given-names: Rune
-  title: "BLOCKS: an application for administering blocked, text-based factorial vignette studies"
+  title: "BLOCKS: An adaptable application for administering blocked, text-based vignette experiments"
   year: 2026
   version: 2.0.1
   doi: "10.5281/zenodo.21178557"
