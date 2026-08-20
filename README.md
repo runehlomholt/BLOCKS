@@ -2,14 +2,14 @@
 
 **Design, deploy, and run blocked vignette experiments without consultancy fees.**
 
-BLOCKS is a free, open-source web application for researchers who want to conduct blocked vignette experiments with control over design, randomisation, data storage, and study flow.
+BLOCKS is a free, open-source web application for researchers who want to conduct blocked vignette experiments with control over design, respondent assignment, vignette randomisation, data storage, and study flow.
 
-Respondents enter through a personal study link, are assigned to a balanced vignette set, answer one vignette at a time, and can return to an unfinished session using the same link. The researcher defines the experimental design in R, writes the vignette content, configures question batteries in Excel, and receives analysis-ready data from PostgreSQL.
+Respondents enter through a personal study link, are assigned using adaptive assignment to the least-occupied vignette set, with random tie-breaking, answer one vignette at a time, and can return to an unfinished session using the same link. The researcher defines the experimental design in R, writes the vignette content, configures question batteries in Excel, and receives analysis-ready data from PostgreSQL.
 
 The app is designed for researchers, not software companies:
 
 - No licence or per-respondent fees
-- No black-box allocation or randomisation
+- No black-box respondent assignment or vignette randomisation
 - No required storage outside infrastructure you control
 - No requirement to collect names or email addresses
 - Transparent and auditable study logic
@@ -24,7 +24,7 @@ The respondent follows a link containing a study token:
 https://YOUR_APP_DOMAIN/?token=RESPONDENT_ID
 ```
 
-For a new token, BLOCKS assigns the respondent to one of the vignette sets with the fewest participants. If several sets are equally available, the app chooses randomly between them. This keeps allocation balanced, including when several respondents enter at nearly the same time.
+For a new token, BLOCKS uses adaptive assignment to the least-occupied vignette set, with random tie-breaking. This keeps allocation balanced, including when several respondents enter at nearly the same time.
 
 The vignette order is shuffled once for that respondent and then stored. The respondent therefore keeps the same set and order throughout the study.
 
@@ -54,7 +54,7 @@ The app records whether it was completed correctly as well as its presentation t
 
 If a respondent leaves after submitting at least one vignette, opening the original link again resumes the study at the first unanswered vignette. Previously submitted responses and the original randomised order are retained.
 
-If someone enters but never submits a vignette, the unused allocation can expire after a configurable period. It then stops occupying a set quota. A respondent who later returns with that same token can still reactivate the original assignment.
+If someone enters but never submits a vignette, the unused allocation can expire after a configurable period. It then stops occupying set capacity. A respondent who later returns with that same token can still reactivate the original assignment.
 
 ### 5. Completing the study
 
@@ -71,13 +71,13 @@ This makes it possible to monitor recruitment, dropout, set balance, and complet
 
 ## What the app does
 
-- Assigns respondents to quota-balanced vignette sets
+- Uses adaptive assignment to the least-occupied vignette set, with random tie-breaking
 - Randomises and stores vignette order within each set
 - Presents text-based vignettes with flexible question batteries
 - Validates required answers and permitted scale values
 - Supports returning respondents and partial participation
 - Presents and records an arithmetic attention check
-- Records response timing and interaction paradata
+- Records response timing and process-generated interaction data
 - Stores responses in PostgreSQL
 - Provides protected, analysis-ready CSV export
 - Supports read-only monitoring and data-integrity checks in R

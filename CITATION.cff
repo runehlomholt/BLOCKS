@@ -15,11 +15,12 @@ year: 2026
 
 abstract: >
   BLOCKS is an open-source FastAPI application for administering blocked, 
-  text-based vignette experiments. Version 2.0.0 introduces modular 
-  application architecture, concurrency-safe quota allocation, resumable 
+  text-based vignette experiments. Version 2.0.1 introduces modular 
+  application architecture, concurrency-safe adaptive assignment to the 
+  least-occupied vignette set, with random tie-breaking, resumable 
   participation, lifecycle tracking, server-side validation, expanded 
-  paradata, protected episode-level export, database monitoring, database 
-  migrations, automated tests, and a staged R design workflow. Outcome 
+  process-generated data capture, protected episode-level export, database 
+  monitoring, database migrations, automated tests, and a staged R design workflow. Outcome 
   variables and response scales remain configurable through structured 
   Excel workbooks.
 

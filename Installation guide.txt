@@ -303,23 +303,25 @@ episodes, answer changes, attention results, and respondents who stopped at the
 attention gate. It does not remove or reclassify respondents.
 
 
-8. Understand dropout and quota behavior
-----------------------------------------
+8. Understand dropout and set-occupancy behavior
+------------------------------------------------
 
-The allocation quota counts `allocated`, `started`, and `completed` records.
+Adaptive assignment to the least-occupied vignette set, with random
+tie-breaking, counts `allocated`, `started`, and `completed` records.
 
 - A respondent who opens the app but never submits the first vignette remains
   `allocated` initially.
 - After `ALLOCATION_EXPIRY_MINUTES` of inactivity, that unused allocation is
   marked `abandoned` the next time a new respondent is allocated.
-- `Abandoned` records no longer count toward set quotas.
+- `Abandoned` records no longer count toward set occupancy.
 - A respondent who submitted at least one vignette remains `started` after
   dropout. Their saved responses remain available and they continue counting
-  toward the set quota.
+  toward set occupancy.
 - The same token resumes the original assignment and first unanswered vignette.
 
 This distinction prevents people who never begin answering from permanently
-occupying quota while preserving scientifically useful partial-response data.
+occupying set capacity while preserving scientifically useful partial-response
+data.
 
 
 9. Update and publish
